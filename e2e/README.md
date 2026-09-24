@@ -98,3 +98,4 @@ diperbaiki, bukan disembunyikan.
 | 5   | Low (UX) | Nilai negatif ditampilkan sebagai `Rp-1.000`, bukan `-Rp1.000`.                                                                                                                                  | Dicatat           |
 | 6   | A11y     | Dropdown "Satuan Dasar" tidak punya label yang terhubung (`<label for>`).                                                                                                                        | Dicatat           |
 | 7   | A11y     | Hasil pencarian POS berupa `<div>` yang hanya bisa diklik mouse, tidak bisa dipilih lewat keyboard.                                                                                              | Dicatat           |
+| 8   | Low (UI) | Grafik Penjualan di Dashboard menampilkan label sumbu Y duplikat (`Rp1`, `Rp1`, `Rp1`, `Rp0`, `Rp0`) saat omzet periode tersebut 0.                                                              | Dicatat           |
