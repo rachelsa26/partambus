@@ -1,0 +1,74 @@
+# PARTAMBUS - lingkungan CODING sehari-hari (pengganti Laragon)
+#
+#   docker compose -f docker-compose.dev.yml up -d --build   -> nyalakan
+#   docker compose -f docker-compose.dev.yml down            -> matikan (data TETAP aman)
+#
+#   Aplikasi : http://localhost:8000
+#   Adminer  : http://localhost:8081   (server: db, user: partambus, password: partambus)
+#   MariaDB  : localhost:3308          (untuk HeidiSQL/DBeaver)
+#
+# Beda dengan docker-compose.yml (lingkungan TEST, port 8080/3307):
+#   - Folder proyek di-mount langsung ke container: edit file -> refresh browser,
+#     tidak perlu build ulang.
+#   - Database terpisah (volume "dev-db-data") dan TIDAK direset oleh test.
+#     Jangan pakai "down -v" kecuali memang ingin menghapus semua data coding.
+#
+# Keduanya boleh menyala bersamaan karena nama project, port, dan volumenya berbeda.
+
+name: partambus-dev
+
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: partambus
+      MARIADB_USER: partambus
+      MARIADB_PASSWORD: partambus
+      MARIADB_ROOT_PASSWORD: root
+      TZ: Asia/Jakarta
+    ports:
+      - "3308:3306"
+    volumes:
+      - dev-db-data:/var/lib/mysql
+      # Hanya dijalankan sekali, saat volume database masih kosong.
+      # Tanpa data uji: database coding dimulai dari skema kosong.
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      DB_HOST: db
+      DB_NAME: partambus
+      DB_USER: partambus
+      DB_PASS: partambus
+      TZ: Asia/Jakarta
+    ports:
+      - "8000:80"
+    volumes:
+      # Kode dari laptop langsung dipakai container (live edit).
+      - .:/var/www/html
+      # Folder vendor tetap memakai hasil composer di dalam image,
+      # supaya tidak tertimpa folder vendor/ di laptop.
+      - /var/www/html/vendor
+    depends_on:
+      db:
+        condition: service_healthy
+
+  adminer:
+    image: adminer:latest
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
+volumes:
+  dev-db-data:

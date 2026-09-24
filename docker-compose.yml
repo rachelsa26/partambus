@@ -1,0 +1,47 @@
+# PARTAMBUS - lingkungan lokal & CI
+#
+#   docker compose up -d --build     -> app di http://localhost:8080
+#   docker compose down -v           -> matikan + hapus database (reset bersih)
+#
+# Database di-seed otomatis dari database/schema.sql + docker/db/02-test-data.sql
+# setiap kali volume database masih kosong.
+
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: partambus
+      MARIADB_USER: partambus
+      MARIADB_PASSWORD: partambus
+      MARIADB_ROOT_PASSWORD: root
+      TZ: Asia/Jakarta
+    ports:
+      - "3307:3306" # 3307 supaya tidak bentrok dengan MySQL Laragon
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./docker/db/02-test-data.sql:/docker-entrypoint-initdb.d/02-test-data.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      DB_HOST: db
+      DB_NAME: partambus
+      DB_USER: partambus
+      DB_PASS: partambus
+      TZ: Asia/Jakarta
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:

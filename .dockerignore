@@ -1,0 +1,11 @@
+.git
+.github
+.claude
+vendor
+e2e
+node_modules
+backups/*.sql
+imports/*
+!imports/.htaccess
+config/env.local.php
+docker-compose.yml

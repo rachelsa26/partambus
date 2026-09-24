@@ -2,3 +2,6 @@
 /config/env.local.php
 /backups/*.sql
 /.claude/
+/imports/*
+!/imports/.htaccess
+/node_modules/

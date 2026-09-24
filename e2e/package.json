@@ -1,0 +1,29 @@
+{
+  "name": "partambus-e2e",
+  "version": "1.0.0",
+  "description": "End-to-end test suite untuk PARTAMBUS (Playwright + TypeScript)",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "typecheck": "tsc",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^26.6.2",
+    "dotenv": "^18.0.3",
+    "eslint": "^9.39.5",
+    "eslint-plugin-playwright": "^2.12.0",
+    "mysql2": "^3.24.4",
+    "prettier": "^3.9.9",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.1"
+  },
+  "private": true
+}
