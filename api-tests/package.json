@@ -4,10 +4,11 @@
   "description": "Test API/HTTP PARTAMBUS dengan Postman + Newman",
   "private": true,
   "scripts": {
-    "test": "newman run partambus.postman_collection.json -e docker-test.postman_environment.json --reporters cli,htmlextra,junit --reporter-htmlextra-export reports/api-report.html --reporter-htmlextra-title \"PARTAMBUS API Tests\" --reporter-junit-export reports/junit.xml"
+    "test": "newman run partambus.postman_collection.json -e docker-test.postman_environment.json --reporters cli,htmlextra,junit,allure --reporter-htmlextra-export reports/api-report.html --reporter-htmlextra-title \"PARTAMBUS API Tests\" --reporter-junit-export reports/junit.xml --reporter-allure-resultsDir allure-results"
   },
   "devDependencies": {
     "newman": "^6.2.2",
+    "newman-reporter-allure": "^3.12.2",
     "newman-reporter-htmlextra": "^1.23.1"
   }
 }

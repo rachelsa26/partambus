@@ -17,6 +17,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /auth/login.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/auth/login.php'));"
                 ]
@@ -49,6 +50,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Username', () => pm.expect(pm.response.text()).to.include('Username'));",
                   "",
@@ -85,6 +87,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Username atau password salah, atau akun tidak aktif.', () => pm.expect(pm.response.text()).to.include('Username atau password salah, atau akun tidak aktif.'));",
                   "pm.test('Tidak diarahkan ke dashboard', () => pm.expect(pm.response.headers.get('Location')).to.be.undefined);"
@@ -138,6 +141,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Username atau password salah, atau akun tidak aktif.', () => pm.expect(pm.response.text()).to.include('Username atau password salah, atau akun tidak aktif.'));"
                 ]
@@ -190,6 +194,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Username dan password wajib diisi.', () => pm.expect(pm.response.text()).to.include('Username dan password wajib diisi.'));"
                 ]
@@ -242,6 +247,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 403', () => pm.response.to.have.status(403));",
                   "pm.test('Halaman menampilkan: CSRF check gagal', () => pm.expect(pm.response.text()).to.include('CSRF check gagal'));"
                 ]
@@ -289,6 +295,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /dashboard.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/dashboard.php'));",
                   "",
@@ -346,6 +353,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Dashboard', () => pm.expect(pm.response.text()).to.include('Dashboard'));"
                 ]
@@ -377,6 +385,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /auth/login.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/auth/login.php'));"
                 ]
@@ -409,6 +418,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /auth/login.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/auth/login.php'));"
                 ]
@@ -445,6 +455,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /auth/login.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/auth/login.php'));"
                 ]
@@ -477,6 +488,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "",
                   "const m = pm.response.text().match(/name=\"csrf_token\" value=\"([a-f0-9]+)\"/);",
@@ -512,6 +524,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /dashboard.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/dashboard.php'));"
                 ]
@@ -564,6 +577,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));"
                 ]
               }
@@ -610,6 +624,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Content-Type JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
                   "const body = pm.response.json();",
@@ -660,6 +675,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
                   "pm.test('action = list', () => pm.expect(body.action).to.eql('list'));",
@@ -704,6 +720,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
                   "pm.test('action = list (tidak auto-add)', () => pm.expect(body.action).to.eql('list'));",
@@ -748,6 +765,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('action = list', () => pm.expect(pm.response.json().action).to.eql('list'));"
                 ]
@@ -790,6 +808,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
                   "const body = pm.response.json();",
                   "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
@@ -849,6 +868,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Jumlah harus bilangan bulat positif.', () => pm.expect(pm.response.text()).to.include('Jumlah harus bilangan bulat positif.'));"
                 ]
@@ -911,6 +931,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Jumlah harus bilangan bulat positif.', () => pm.expect(pm.response.text()).to.include('Jumlah harus bilangan bulat positif.'));"
                 ]
@@ -973,6 +994,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Produk/unit tidak valid atau tidak bisa dijual.', () => pm.expect(pm.response.text()).to.include('Produk/unit tidak valid atau tidak bisa dijual.'));"
                 ]
@@ -1035,6 +1057,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /pos/index.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/pos/index.php'));"
                 ]
@@ -1097,6 +1120,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "const m = pm.response.text().match(/name=\"request_token\" value=\"([a-f0-9]+)\"/);",
                   "pm.test('Halaman kasir berisi request_token (kunci idempotensi)', () => pm.expect(m).to.not.be.null);",
@@ -1132,6 +1156,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
                   "const body = pm.response.json();",
                   "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
@@ -1191,6 +1216,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
                   "const body = pm.response.json();",
                   "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
@@ -1250,6 +1276,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 403', () => pm.response.to.have.status(403));"
                 ]
               }
@@ -1301,6 +1328,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
                   "pm.test('success = true', () => pm.expect(body.success).to.eql(true));",
@@ -1365,6 +1393,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
                   "const body = pm.response.json();",
                   "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
@@ -1425,6 +1454,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 403', () => pm.response.to.have.status(403));",
                   "pm.test('Halaman menampilkan: Akses ditolak', () => pm.expect(pm.response.text()).to.include('Akses ditolak'));"
                 ]
@@ -1477,6 +1507,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 403', () => pm.response.to.have.status(403));",
                   "pm.test('Halaman menampilkan: Akses ditolak', () => pm.expect(pm.response.text()).to.include('Akses ditolak'));"
                 ]
@@ -1509,6 +1540,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 403', () => pm.response.to.have.status(403));",
                   "pm.test('Halaman menampilkan: Akses ditolak', () => pm.expect(pm.response.text()).to.include('Akses ditolak'));"
                 ]
@@ -1566,6 +1598,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /cash/index.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/cash/index.php'));"
                 ]
@@ -1619,6 +1652,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));"
                 ]
               }
@@ -1680,6 +1714,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "const m = pm.response.text().match(/name=\"request_token\" value=\"([a-f0-9]+)\"/);",
                   "pm.test('Halaman kasir berisi request_token (kunci idempotensi)', () => pm.expect(m).to.not.be.null);",
@@ -1715,6 +1750,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
                   "const body = pm.response.json();",
                   "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
@@ -1779,6 +1815,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Kas awal harus angka &gt;= 0.', () => pm.expect(pm.response.text()).to.include('Kas awal harus angka &gt;= 0.'));"
                 ]
@@ -1826,6 +1863,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /cash/index.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/cash/index.php'));"
                 ]
@@ -1873,6 +1911,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /cash/index.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/cash/index.php'));"
                 ]
@@ -1921,6 +1960,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
                   "const body = pm.response.json();",
                   "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
@@ -1985,6 +2025,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
                   "pm.test('success = true', () => pm.expect(body.success).to.eql(true));",
@@ -2051,6 +2092,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Alasan wajib diisi karena ada selisih kas', () => pm.expect(pm.response.text()).to.include('Alasan wajib diisi karena ada selisih kas'));"
                 ]
@@ -2104,6 +2146,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /cash/index.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/cash/index.php'));"
                 ]
@@ -2161,6 +2204,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /auth/login.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/auth/login.php'));"
                 ]
@@ -2193,6 +2237,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "",
                   "const m = pm.response.text().match(/name=\"csrf_token\" value=\"([a-f0-9]+)\"/);",
@@ -2228,6 +2273,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /dashboard.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/dashboard.php'));"
                 ]
@@ -2280,6 +2326,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Alasan void wajib diisi.', () => pm.expect(pm.response.text()).to.include('Alasan void wajib diisi.'));"
                 ]
@@ -2332,6 +2379,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /sales/view.php?id=', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/sales/view.php?id='));"
                 ]
@@ -2384,6 +2432,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan status void', () => pm.expect(pm.response.text().toLowerCase()).to.include('void'));"
                 ]
@@ -2422,6 +2471,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "pm.test('Diarahkan ke /sales/view.php?id=', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/sales/view.php?id='));"
                 ]
@@ -2475,6 +2525,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 403', () => pm.response.to.have.status(403));",
                   "pm.test('Halaman menampilkan: CSRF check gagal', () => pm.expect(pm.response.text()).to.include('CSRF check gagal'));"
                 ]
@@ -2517,6 +2568,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "pm.test('Halaman menampilkan: Nama supplier wajib diisi.', () => pm.expect(pm.response.text()).to.include('Nama supplier wajib diisi.'));"
                 ]
@@ -2564,6 +2616,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "const loc = pm.response.headers.get('Location') || '';",
                   "// BUG: seharusnya Location tetap di domain sendiri (tidak diawali //).",

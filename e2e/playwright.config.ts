@@ -14,9 +14,14 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 5_000 },
 
-  reporter: isCI
-    ? [['list'], ['html', { open: 'never' }], ['junit', { outputFile: 'test-results/junit.xml' }], ['github']]
-    : [['list'], ['html', { open: 'on-failure' }]],
+  // Allure: hasil UI digabung dengan hasil API (Newman) menjadi satu dashboard.
+  // Label epic "UI" membedakannya dari test API (epic "API").
+  reporter: [
+    ['list'],
+    // Di CI tiap shard menulis blob report yang nanti digabung jadi satu HTML report.
+    ...(isCI ? ([['blob'], ['github']] as const) : ([['html', { open: 'on-failure' }]] as const)),
+    ['allure-playwright', { resultsDir: 'allure-results', globalLabels: { epic: 'UI' } }],
+  ],
 
   use: {
     baseURL: env.baseURL,

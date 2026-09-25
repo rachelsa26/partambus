@@ -22,11 +22,14 @@ flowchart LR
   B --> C[Docker: app + MariaDB<br/>database bersih]
   C --> D[Playwright<br/>2 shard paralel]
   C --> F[Newman<br/>Postman collection]
-  D --> E[HTML report<br/>trace, video, screenshot]
-  F --> G[API report<br/>htmlextra]
+  D --> H[Allure dashboard<br/>UI + API]
+  F --> H
 ```
 
 Setiap push, pull request, dan setiap malam (02:00 WIB), GitHub Actions membangun aplikasi dari nol di Docker lalu menjalankan seluruh test UI dan API.
+
+Hasil UI dan API digabung menjadi **satu dashboard Allure Report** (grup `UI` dan `API`), lengkap dengan langkah tiap test.
+Laporan per tool tetap tersedia: Playwright HTML report (trace, video, screenshot saat gagal) dan Newman htmlextra.
 
 Beberapa keputusan desain:
 
@@ -42,7 +45,8 @@ Temuan lengkap (severity, langkah, status) ada di [`e2e/README.md`](e2e/README.m
 ## Teknologi
 
 - **Aplikasi:** PHP 8.3, Apache, MariaDB 11.4, PhpSpreadsheet
-- **Testing:** Playwright, TypeScript, mysql2, ESLint (`eslint-plugin-playwright`), Prettier
+- **Testing:** Playwright, TypeScript, Postman + Newman, mysql2, ESLint (`eslint-plugin-playwright`), Prettier
+- **Reporting:** Allure Report 3, Playwright HTML report, newman-reporter-htmlextra
 - **Lingkungan & CI:** Docker Compose, GitHub Actions
 
 ## Menjalankan
@@ -55,7 +59,15 @@ cd e2e
 npm ci
 npx playwright install chromium
 npx playwright test                    # semua test
-npx playwright show-report             # buka laporan
+npx playwright show-report             # buka laporan Playwright
+
+cd ../api-tests
+npm ci
+npm test                               # 53 request API (Newman)
+
+cd ../e2e
+npm run allure:report                  # gabungkan UI + API jadi satu dashboard
+npm run allure:open
 ```
 
 Mode coding sehari-hari (aplikasi di port 8000 + Adminer) dijelaskan di [`DOCKER.md`](DOCKER.md).

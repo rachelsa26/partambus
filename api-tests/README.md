@@ -18,6 +18,7 @@ ditambah dua endpoint JSON di kasir. Suite ini menguji kontrak HTTP-nya langsung
 - **Chaining request:** CSRF token, `request_token` (kunci idempotensi), `product_id`, dan `sale_id` diambil dari respons lalu disimpan sebagai variabel untuk request berikutnya.
 - **Redirect tidak diikuti** (`followRedirects: false`), supaya status 302 dan header `Location` bisa diperiksa.
 - **Aman diulang:** tiap folder mulai dengan logout, dan folder sesi kas mulai dengan menutup sesi yang mungkin masih terbuka.
+- **Label Allure** `// @allure.label.epic:API` di tiap script, supaya hasil API tampil dalam grup `API` di dashboard Allure gabungan (UI + API).
 - **Bug yang diketahui** diberi label `[KNOWN BUG #n]` dan memastikan bug *masih ada*. Saat bug diperbaiki, test gagal sebagai tanda untuk membalik assertion menjadi penjaga regresi.
 
 ## Menjalankan
@@ -32,5 +33,5 @@ Aplikasi test harus menyala: `docker compose up -d --build --wait` dari folder u
 ```bash
 cd api-tests
 npm ci
-npm test        # laporan HTML: reports/api-report.html
+npm test        # laporan HTML: reports/api-report.html, hasil Allure: allure-results/
 ```

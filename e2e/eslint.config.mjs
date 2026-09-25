@@ -3,7 +3,18 @@ import playwright from 'eslint-plugin-playwright';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['node_modules', 'playwright-report', 'test-results', 'blob-report', 'all-blob-reports'] },
+  {
+    ignores: [
+      'node_modules',
+      'playwright-report',
+      'test-results',
+      'blob-report',
+      'all-blob-reports',
+      'allure-results',
+      'allure-report',
+      'all-allure-results',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
