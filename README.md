@@ -41,7 +41,7 @@ Beberapa keputusan desain:
 
 ## Temuan
 
-Temuan lengkap (severity, langkah, status) ada di [`e2e/README.md`](e2e/README.md#temuan-selama-pengujian). Ringkasnya: 1 critical (sudah diperbaiki), 3 medium (open redirect, zona waktu transaksi, produk harga Rp0), beberapa temuan low, UX, dan aksesibilitas, plus temuan kualitas data asli (stok tanpa riwayat ledger). Dua temuan medium ditemukan oleh test database.
+Temuan lengkap (severity, langkah, status) ada di [`e2e/README.md`](e2e/README.md#temuan-selama-pengujian). Ringkasnya: 1 critical (sudah diperbaiki), 3 medium (open redirect, zona waktu transaksi, produk harga Rp0), beberapa temuan low, UX, dan aksesibilitas. Dua temuan medium ditemukan oleh test database.
 
 ## Teknologi
 
