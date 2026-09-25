@@ -7,10 +7,6 @@ export class ProductFormPage extends BasePage {
 
   readonly code: Locator;
   readonly name: Locator;
-  /**
-   * Catatan a11y: dropdown satuan dasar tidak punya <label for>, jadi
-   * tidak bisa ditemukan lewat getByLabel. Terpaksa pakai atribut name.
-   */
   readonly baseUnit: Locator;
   readonly lowStockThreshold: Locator;
   readonly canSell: Locator;
@@ -21,7 +17,7 @@ export class ProductFormPage extends BasePage {
     super(page);
     this.code = page.getByLabel('Kode Produk');
     this.name = page.getByLabel('Nama Produk');
-    this.baseUnit = page.locator('select[name="base_unit_name"]');
+    this.baseUnit = page.getByLabel('Satuan Dasar (base unit)');
     this.lowStockThreshold = page.getByLabel('Batas Stok Rendah (dalam satuan dasar)');
     this.canSell = page.getByRole('checkbox', { name: 'Bisa dijual' }).first();
     this.sellingPrice = page.getByLabel('Harga Jual per Satuan Dasar');

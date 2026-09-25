@@ -41,6 +41,8 @@ test.describe('Keamanan dasar', { tag: '@security' }, () => {
     '/lib/auth.php',
     '/composer.json',
     '/backups/',
+    '/vendor/composer/installed.json', // pernah bocor (temuan #3)
+    '/includes/header.php', // pernah bisa dibuka langsung dan menghasilkan HTTP 500 (temuan #4)
   ];
 
   for (const path of privatePaths) {
@@ -50,44 +52,28 @@ test.describe('Keamanan dasar', { tag: '@security' }, () => {
     });
   }
 
-  test(
-    'BUG: metadata dependency di /vendor terbuka untuk publik',
-    {
-      tag: '@known-bug',
-      annotation: {
-        type: 'issue',
-        description:
-          'vendor/composer/installed.json membocorkan versi library. Tambahkan .htaccess "Require all denied" di vendor/.',
-      },
-    },
-    async ({ request }) => {
-      test.fail(); // Hapus baris ini setelah bug diperbaiki; test akan jadi penjaga regresi.
-      const response = await request.get('/vendor/composer/installed.json');
-      expect(response.status()).toBe(403);
-    },
-  );
+  test('return_to ke domain luar diabaikan (tidak ada open redirect)', async ({ page, api }) => {
+    await page.goto('/suppliers/create.php');
 
-  test(
-    'BUG: open redirect lewat parameter return_to di form supplier',
-    {
-      tag: '@known-bug',
-      annotation: {
-        type: 'issue',
-        description:
-          'suppliers/create.php meneruskan return_to ke header Location tanpa validasi. "//evil.example" mengarahkan user ke domain lain.',
-      },
-    },
-    async ({ page, api }) => {
-      test.fail(); // Hapus baris ini setelah bug diperbaiki.
-      await page.goto('/suppliers/create.php');
+    const response = await api.submitForm('/suppliers/create.php', {
+      name: `Supplier redirect ${Date.now()}`,
+      return_to: '//evil.example/phish',
+    });
 
-      const response = await api.submitForm('/suppliers/create.php', {
-        name: `Supplier redirect ${Date.now()}`,
-        return_to: '//evil.example/phish',
-      });
+    expect(response.status()).toBe(302);
+    expect(response.headers()['location']).not.toMatch(/^\/\//);
+    expect(response.headers()['location']).toContain('/suppliers/index.php');
+  });
 
-      expect(response.status()).toBe(302);
-      expect(response.headers()['location']).not.toMatch(/^\/\//);
-    },
-  );
+  test('return_to ke halaman internal tetap dipakai', async ({ page, api }) => {
+    await page.goto('/suppliers/create.php');
+
+    const response = await api.submitForm('/suppliers/create.php', {
+      name: `Supplier dari pembelian ${Date.now()}`,
+      return_to: '/purchases/create.php',
+    });
+
+    expect(response.status()).toBe(302);
+    expect(response.headers()['location']).toMatch(/\/purchases\/create\.php\?supplier_id=\d+$/);
+  });
 });

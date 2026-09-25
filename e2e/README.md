@@ -2,22 +2,24 @@
 
 Automated end-to-end tests untuk **PARTAMBUS**, aplikasi POS & manajemen toko retail (PHP 8 + MySQL/MariaDB).
 Dibangun dengan **Playwright + TypeScript**, berjalan terhadap aplikasi yang di-container-kan dengan **Docker**, dan
-dieksekusi otomatis di **GitHub Actions** setiap push, pull request, dan setiap malam.
+dieksekusi otomatis di **GitHub Actions** setiap push, pull request, dan setiap hari Minggu.
 
 [![E2E Tests](https://github.com/rachelsa26/partambus/actions/workflows/e2e.yml/badge.svg)](https://github.com/rachelsa26/partambus/actions/workflows/e2e.yml)
 
 ## Cakupan
 
-| Area             | Yang diuji                                                                                                                                              |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Autentikasi      | Login owner/kasir, password salah, user tak terdaftar, akun nonaktif, field kosong, logout, redirect halaman terproteksi                                |
-| Hak akses (RBAC) | Menu per role, dan **server menolak (403)** 8 halaman khusus owner walau URL dibuka langsung oleh kasir                                                 |
-| Produk           | Tambah produk + verifikasi DB & audit log, kode unik _case-insensitive_, aturan "minimal satu satuan bisa dijual", validasi field wajib                 |
-| Kasir (POS)      | Scan barcode (auto-add), cari & pilih satuan, jual via QRIS/Transfer, konversi satuan (1 SLOP = 10 PCS) di ledger stok, stok habis memblokir pembayaran |
-| Sesi kas         | Tunai terkunci tanpa sesi kas, buka sesi, cegah sesi ganda, kembalian tunai, uang kurang ditolak, tutup sesi dengan selisih wajib catatan               |
-| Keamanan         | CSRF token wajib, file internal (`.sql`, `config/`, `lib/`) tidak bisa diakses publik, 2 bug keamanan terdokumentasi                                    |
+| Area             | Yang diuji                                                                                                                                                                  |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Autentikasi      | Login owner/kasir, password salah, user tak terdaftar, akun nonaktif, field kosong, logout, redirect halaman terproteksi                                                    |
+| Hak akses (RBAC) | Menu per role, dan **server menolak (403)** 8 halaman khusus owner walau URL dibuka langsung oleh kasir                                                                     |
+| Produk           | Tambah produk + verifikasi DB & audit log, kode unik _case-insensitive_, aturan "minimal satu satuan bisa dijual", harga jual wajib lebih dari 0, validasi field wajib      |
+| Kasir (POS)      | Scan barcode (auto-add), cari & pilih satuan, jual via QRIS/Transfer, konversi satuan (1 SLOP = 10 PCS) di ledger stok, stok habis memblokir pembayaran                     |
+| Sesi kas         | Tunai terkunci tanpa sesi kas, buka sesi, cegah sesi ganda, kembalian tunai, uang kurang ditolak, tutup sesi dengan selisih wajib catatan                                   |
+| Keamanan         | CSRF token wajib, file internal (`.sql`, `config/`, `lib/`, `vendor/`, `includes/`) tidak bisa diakses publik, `return_to` tidak bisa dipakai untuk redirect ke domain luar |
+| Aksesibilitas    | Dropdown satuan dasar punya label, hasil pencarian POS bisa dipilih dengan keyboard                                                                                         |
+| Dashboard        | Label sumbu Y setiap grafik tren tidak berulang                                                                                                                             |
 
-**49 test**, sekitar 30 detik secara paralel, dijalankan dan lulus berulang kali tanpa flaky.
+**55 test**, sekitar 35 detik secara paralel, dijalankan dan lulus berulang kali tanpa flaky.
 
 ## Arsitektur
 
@@ -31,7 +33,7 @@ e2e/
 │   ├── db/database.ts         # Assertion langsung ke database (stok, ledger, pembayaran, audit)
 │   └── data/factory.ts        # Test data unik per test + data seed
 └── tests/
-    ├── auth/  products/  pos/  cash/  security/
+    ├── auth/  products/  pos/  cash/  security/  a11y/  dashboard/
 ```
 
 Keputusan desain yang disengaja:
@@ -49,10 +51,10 @@ Keputusan desain yang disengaja:
 - **Konvensi Page Object:** Page Object berisi locator dan aksi; `expect` di dalamnya hanya untuk menunggu aksi
   selesai, kecuali method `expect...` yang dipakai ulang. Verifikasi hasil ditulis di test, dipecah dengan `test.step`
   supaya langkahnya terbaca di report.
-- **Locator berbasis aksesibilitas** (`getByRole`, `getByLabel`). Tempat yang terpaksa memakai CSS selector diberi
-  komentar, karena itu sekaligus temuan aksesibilitas (lihat bawah).
-- **Bug yang diketahui = test yang ditandai `test.fail()`.** Test tetap hijau selama bug ada. Saat bug diperbaiki, test
-  akan "unexpectedly passed", jadi `test.fail()` dihapus dan test berubah menjadi penjaga regresi.
+- **Locator berbasis aksesibilitas** (`getByRole`, `getByLabel`). Kalau sebuah elemen tidak bisa ditemukan lewat role
+  atau label, itu diperlakukan sebagai bug aksesibilitas aplikasi dan diperbaiki, bukan diakali dengan CSS selector.
+- **Setiap bug yang diperbaiki punya test regresi.** Test ditulis dulu sampai gagal karena bug, lalu lulus setelah
+  perbaikan, sehingga bug yang sama tidak bisa muncul lagi tanpa ketahuan.
 
 ## Menjalankan
 
@@ -90,19 +92,3 @@ Database di-seed otomatis dari `database/schema.sql` + `docker/db/02-test-data.s
 
 Retry hanya aktif di CI (1x). Test yang lulus setelah retry tercatat sebagai _flaky_ di report, sebagai sinyal untuk
 diperbaiki, bukan disembunyikan.
-
-## Temuan selama pengujian
-
-| #   | Severity | Temuan                                                                                                                                                                                                                                                                                                                                                             | Status                       |
-| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- |
-| 1   | Critical | `config/database.php` memakai `const X = getenv(...)`. PHP tidak mengizinkan pemanggilan fungsi di ekspresi `const`, sehingga **semua halaman fatal error**. Perbaikan: ganti dengan `define()`.                                                                                                                                                                   | Sudah diperbaiki             |
-| 2   | Medium   | **Open redirect:** `suppliers/create.php` meneruskan `return_to` ke header `Location` tanpa validasi; `//evil.example` mengarahkan user ke domain lain setelah menyimpan.                                                                                                                                                                                          | Test `@known-bug`            |
-| 3   | Low      | `vendor/composer/installed.json` bisa diunduh publik dan membocorkan versi library.                                                                                                                                                                                                                                                                                | Test `@known-bug`            |
-| 4   | Low      | File partial seperti `includes/header.php` bisa diakses langsung dan menghasilkan HTTP 500.                                                                                                                                                                                                                                                                        | Dicatat                      |
-| 5   | Low (UX) | Nilai negatif ditampilkan sebagai `Rp-1.000`, bukan `-Rp1.000`.                                                                                                                                                                                                                                                                                                    | Dicatat                      |
-| 6   | A11y     | Dropdown "Satuan Dasar" tidak punya label yang terhubung (`<label for>`).                                                                                                                                                                                                                                                                                          | Dicatat                      |
-| 7   | A11y     | Hasil pencarian POS berupa `<div>` yang hanya bisa diklik mouse, tidak bisa dipilih lewat keyboard.                                                                                                                                                                                                                                                                | Dicatat                      |
-| 8   | Low (UI) | Grafik Penjualan di Dashboard menampilkan label sumbu Y duplikat (`Rp1`, `Rp1`, `Rp1`, `Rp0`, `Rp0`) saat omzet periode tersebut 0.                                                                                                                                                                                                                                | Dicatat                      |
-| 9   | Medium   | Nomor transaksi memakai jam PHP (WIB), `created_at` memakai jam server database. Jika zona waktu database berbeda (mis. UTC di hosting), transaksi 00.00–07.00 WIB tercatat di tanggal sebelumnya: nomor `SL-20260925-…` tapi `created_at` 24 Sep, laporan harian bergeser. Ditemukan oleh test DB #13. Perbaikan: `SET time_zone = '+07:00'` setelah koneksi PDO. | Dicatat                      |
-| 10  | Medium   | Satuan yang bisa dijual boleh disimpan dengan harga **Rp0** (validasi `products/create.php` hanya menolak harga `< 0`; import Excel juga menerima 0), sehingga kasir bisa menjual barang gratis. Ditemukan test DB #18 pada data asli: 22 satuan berharga Rp0. Perbaikan: wajibkan harga `> 0` untuk satuan yang bisa dijual.                                      | Test `[KNOWN BUG #10]` (API) |
-| 11  | Data     | Pada data asli, stok seluruh 2.648 produk tidak cocok dengan ledger `stock_movements` dan 47 baris saldo ledger terputus: stok diisi/diubah di luar aplikasi (kode aplikasi sekarang selalu mencatat ke ledger). Dampak: kartu stok tidak bisa menjelaskan asal stok. Ditemukan test DB #1 dan #2.                                                                 | Investigasi                  |

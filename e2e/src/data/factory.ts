@@ -37,13 +37,10 @@ export const seededProducts = {
   stokKosong: { code: 'QA-HABIS', name: 'QA Stok Kosong', unit: 'PCS', price: 5000 },
 } as const;
 
-/**
- * Format rupiah persis seperti helper rupiah() di aplikasi: Rp12.500.
- * Catatan: nilai negatif dirender aplikasi sebagai "Rp-1.000" (bukan
- * "-Rp1.000"); helper ini sengaja meniru perilaku tersebut.
- */
+/** Format rupiah persis seperti helper rupiah() di aplikasi: Rp12.500, dan -Rp1.000 untuk nilai negatif. */
 export function rupiah(amount: number): string {
-  return `Rp${Math.round(amount).toLocaleString('id-ID')}`;
+  const value = Math.round(amount);
+  return `${value < 0 ? '-' : ''}Rp${Math.abs(value).toLocaleString('id-ID')}`;
 }
 
 /** Format angka seperti kolom DECIMAL(15,2) yang dikembalikan MySQL: 6000 -> "6000.00". */

@@ -50,16 +50,9 @@ export class PosPage extends BasePage {
     await this.searchButton.click();
   }
 
-  /**
-   * Catatan a11y: baris hasil pencarian adalah <div> yang di-klik lewat
-   * JavaScript, bukan tombol/link, sehingga tidak bisa dipilih dengan
-   * keyboard dan tidak punya role. Locator terpaksa berbasis class.
-   */
+  /** Baris hasil pencarian: role button dengan nama "Tambah <produk> (<satuan>) ke keranjang". */
   searchResult(name: string, unit: string): Locator {
-    return this.page
-      .locator('.pos-result-row')
-      .filter({ hasText: name })
-      .filter({ has: this.page.locator('.pos-unit-badge', { hasText: new RegExp(`^${unit}$`) }) });
+    return this.page.getByRole('button', { name: `Tambah ${name} (${unit}) ke keranjang`, exact: true });
   }
 
   /**
@@ -73,12 +66,17 @@ export class PosPage extends BasePage {
   }
 
   /** Cari dengan kata kunci (bukan kode persis), lalu pilih baris produk + satuan. */
-  async addFromSearch(product: { name: string; unit: string }): Promise<void> {
+  async addFromSearch(product: { name: string; unit: string }, options: { useKeyboard?: boolean } = {}): Promise<void> {
     await this.search(product.name);
     const row = this.searchResult(product.name, product.unit);
     await expect(row).toBeVisible();
     const countBefore = await this.cartCount.textContent();
-    await row.click();
+    if (options.useKeyboard) {
+      await row.focus();
+      await row.press('Enter');
+    } else {
+      await row.click();
+    }
     await expect(this.cartCount).not.toHaveText(countBefore ?? '');
   }
 

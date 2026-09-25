@@ -44,6 +44,17 @@ test.describe('Tambah produk', { tag: '@products' }, () => {
     expect(await db.productExists(product.code)).toBe(false);
   });
 
+  test('harga jual Rp0 ditolak untuk satuan yang bisa dijual', async ({ productFormPage, db }) => {
+    const product = buildProduct({ sellingPrice: 0 });
+
+    await productFormPage.create(product);
+
+    await expect(productFormPage.errorFlash).toContainText(
+      'Harga jual satuan dasar wajib diisi (lebih dari 0) karena satuan dasar ditandai bisa dijual.',
+    );
+    expect(await db.productExists(product.code)).toBe(false);
+  });
+
   test('field wajib kosong menampilkan semua pesan validasi sekaligus', async ({ productFormPage }) => {
     await productFormPage.save.click();
 
