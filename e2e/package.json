@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "allure:report": "allure generate allure-results ../api-tests/allure-results ../db-tests/allure-results --output allure-report",
+    "allure:report": "allure generate allure-results ../api-tests/allure-results ../db-tests/allure-results ../perf-tests/allure-results --output allure-report",
     "allure:open": "allure open allure-report",
     "qa": "node scripts/qa.mjs"
   },

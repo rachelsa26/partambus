@@ -4,6 +4,7 @@ import { defineConfig } from 'allure';
 //   epic "UI"  -> Playwright (e2e/)
 //   epic "API" -> Postman + Newman (api-tests/)
 //   epic "DB"  -> query SQL integritas & constraint (db-tests/)
+//   epic "Performance" -> threshold k6 (perf-tests/)
 export default defineConfig({
   name: 'PARTAMBUS QA Report',
   plugins: {

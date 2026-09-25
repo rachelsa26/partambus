@@ -111,7 +111,7 @@ jobs:
           retention-days: 7
 
   api:
-    name: API tests (Newman)
+    name: API + performa smoke (Newman, k6)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -134,11 +134,28 @@ jobs:
       - name: Jalankan Postman collection
         run: npm test -- --env-var baseUrl=http://127.0.0.1:8080
 
-      - name: Test database (SQL) setelah test API
+      - name: Pasang k6
+        if: ${{ !cancelled() }}
+        uses: grafana/setup-k6-action@v1
+
+      # Hanya smoke dan race test (masing-masing sekitar 15 detik). Load/stress test tidak dijalankan di CI:
+      # mesin GitHub dipakai bersama, jadi angkanya tidak bisa dijadikan patokan.
+      - name: Smoke test performa (k6)
+        if: ${{ !cancelled() }}
+        working-directory: perf-tests
+        run: npm run smoke
+
+      # 30 kasir membayar bersamaan untuk stok tersisa 10: harus tepat 10 terjual.
+      - name: Race condition checkout serentak (k6)
+        if: ${{ !cancelled() }}
+        working-directory: perf-tests
+        run: npm run race
+
+      - name: Test database (SQL) setelah test API + performa
         if: ${{ !cancelled() }}
         working-directory: db-tests
         env:
-          DB_RUN_LABEL: setelah test API
+          DB_RUN_LABEL: setelah test API + performa
         run: |
           npm ci
           npm test
@@ -161,6 +178,20 @@ jobs:
           name: allure-results-api
           path: api-tests/allure-results
           retention-days: 7
+
+      - uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: allure-results-perf
+          path: perf-tests/allure-results
+          retention-days: 7
+
+      - uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: perf-report
+          path: perf-tests/reports
+          retention-days: 14
 
       - uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
@@ -204,7 +235,7 @@ jobs:
           pattern: allure-results-*
           merge-multiple: true
 
-      - name: Buat Allure dashboard (UI + API)
+      - name: Buat Allure dashboard (UI + API + DB + Performa)
         run: npx allure generate all-allure-results --output allure-report
 
       - uses: actions/upload-artifact@v6

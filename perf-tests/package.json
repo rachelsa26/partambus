@@ -1,0 +1,12 @@
+{
+  "name": "partambus-perf-tests",
+  "private": true,
+  "description": "Tes performa PARTAMBUS dengan k6 (smoke, load, stress). Butuh k6 terpasang: winget install k6 --source winget",
+  "scripts": {
+    "prepare-dirs": "node -e \"for (const d of ['reports','allure-results']) require('fs').mkdirSync(d,{recursive:true})\"",
+    "smoke": "npm run prepare-dirs && k6 run scenarios/smoke.js",
+    "load": "npm run prepare-dirs && k6 run --out web-dashboard=export=reports/load-dashboard.html scenarios/load.js",
+    "race": "npm run prepare-dirs && k6 run scenarios/race.js",
+    "stress": "npm run prepare-dirs && k6 run --out web-dashboard=export=reports/stress-dashboard.html scenarios/stress.js"
+  }
+}
