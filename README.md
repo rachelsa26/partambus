@@ -11,7 +11,7 @@ Repositori ini adalah **portofolio Quality Assurance** saya: aplikasi nyata yang
 | --- | --- | --- | --- |
 | UI end-to-end | Playwright + TypeScript | ✅ 49 test | Login, hak akses (RBAC), produk, kasir (POS), sesi kas, keamanan dasar. Detail: [`e2e/README.md`](e2e/README.md) |
 | API / HTTP | Postman + Newman | ✅ 53 request, 127 assertion | Login & cookie sesi, CSRF, endpoint JSON kasir, idempotensi checkout, sesi kas, void, akses per role. Detail: [`api-tests/`](api-tests) |
-| Database | SQL + runner Node | 🗓️ Direncanakan | Integritas ledger stok, total penjualan vs item, sesi kas, constraint |
+| Database | SQL + runner Node | ✅ 30 test | 20 cek integritas data (ledger stok, penjualan, pembayaran, sesi kas) + 10 cek constraint, dijalankan setelah test API dan UI. Detail: [`db-tests/`](db-tests) |
 | Performance | k6 | 🗓️ Direncanakan | Load, stress, dan race condition checkout serentak |
 
 ## Cara kerja otomasi
@@ -22,13 +22,14 @@ flowchart LR
   B --> C[Docker: app + MariaDB<br/>database bersih]
   C --> D[Playwright<br/>2 shard paralel]
   C --> F[Newman<br/>Postman collection]
-  D --> H[Allure dashboard<br/>UI + API]
-  F --> H
+  D --> I[SQL<br/>integritas data]
+  F --> I
+  I --> H[Allure dashboard<br/>UI + API + DB]
 ```
 
-Setiap push, pull request, dan setiap malam (02:00 WIB), GitHub Actions membangun aplikasi dari nol di Docker lalu menjalankan seluruh test UI dan API.
+Setiap push, pull request, dan setiap malam (02:00 WIB), GitHub Actions membangun aplikasi dari nol di Docker lalu menjalankan seluruh test UI, API, dan database.
 
-Hasil UI dan API digabung menjadi **satu dashboard Allure Report** (grup `UI` dan `API`), lengkap dengan langkah tiap test.
+Hasil UI, API, dan database digabung menjadi **satu dashboard Allure Report** (grup `UI`, `API`, dan `DB`), lengkap dengan langkah tiap test.
 Laporan per tool tetap tersedia: Playwright HTML report (trace, video, screenshot saat gagal) dan Newman htmlextra.
 
 Beberapa keputusan desain:
@@ -40,7 +41,7 @@ Beberapa keputusan desain:
 
 ## Temuan
 
-Temuan lengkap (severity, langkah, status) ada di [`e2e/README.md`](e2e/README.md#temuan-selama-pengujian). Ringkasnya: 1 critical (sudah diperbaiki), 1 medium (open redirect), beberapa temuan low, UX, dan aksesibilitas.
+Temuan lengkap (severity, langkah, status) ada di [`e2e/README.md`](e2e/README.md#temuan-selama-pengujian). Ringkasnya: 1 critical (sudah diperbaiki), 2 medium (open redirect, zona waktu transaksi yang ditemukan test database), beberapa temuan low, UX, dan aksesibilitas.
 
 ## Teknologi
 
@@ -69,6 +70,8 @@ cd ../e2e
 npm run allure:report                  # gabungkan UI + API jadi satu dashboard
 npm run allure:open
 ```
+
+Atau semuanya sekaligus (bersihkan hasil lama, test API + UI + database, buat dan buka dashboard): `cd e2e && npm run qa`.
 
 Mode coding sehari-hari (aplikasi di port 8000 + Adminer) dijelaskan di [`DOCKER.md`](DOCKER.md).
 

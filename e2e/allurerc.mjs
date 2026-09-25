@@ -3,6 +3,7 @@ import { defineConfig } from 'allure';
 // Satu dashboard untuk semua lapisan test PARTAMBUS:
 //   epic "UI"  -> Playwright (e2e/)
 //   epic "API" -> Postman + Newman (api-tests/)
+//   epic "DB"  -> query SQL integritas & constraint (db-tests/)
 export default defineConfig({
   name: 'PARTAMBUS QA Report',
   plugins: {

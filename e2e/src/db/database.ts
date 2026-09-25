@@ -86,14 +86,18 @@ export class Database {
   /**
    * Tutup paksa semua sesi kas yang masih terbuka. Aplikasi hanya
    * mengizinkan satu sesi aktif, jadi test kas butuh titik awal yang pasti.
+   * Kas yang diharapkan dihitung sama seperti aplikasi (kas awal + semua
+   * pergerakan kas), supaya data tetap lolos test integritas database.
    */
   async closeAllCashSessions(): Promise<void> {
     await this.pool.query(
-      `UPDATE cash_sessions
-          SET status = 'closed', closed_at = NOW(), closed_by = opened_by,
-              expected_cash = opening_cash, actual_cash = opening_cash, difference = 0,
-              note = 'Ditutup otomatis oleh test setup'
-        WHERE status = 'open'`,
+      `UPDATE cash_sessions cs
+          SET cs.status = 'closed', cs.closed_at = NOW(), cs.closed_by = cs.opened_by,
+              cs.expected_cash = cs.opening_cash
+                + (SELECT COALESCE(SUM(cm.amount), 0) FROM cash_movements cm WHERE cm.cash_session_id = cs.id),
+              cs.actual_cash = cs.expected_cash, cs.difference = 0,
+              cs.note = 'Ditutup otomatis oleh test setup'
+        WHERE cs.status = 'open'`,
     );
   }
 

@@ -6,6 +6,8 @@
 #   1. lint        : typecheck (tsc), ESLint, Prettier
 #   2. e2e         : build app + MariaDB lewat Docker, Playwright dibagi 2 shard
 #   3. api         : Postman collection dijalankan Newman terhadap app di Docker (artifact "api-report")
+#      db          : setelah test API dan tiap shard UI, query SQL memeriksa integritas data yang
+#                    baru dibuat (db-tests/). Constraint database dicek sekali di job API.
 #   4. report      : - gabungkan shard Playwright -> satu HTML report (artifact "playwright-report")
 #                    - gabungkan hasil UI + API -> satu Allure dashboard (artifact "allure-report")
 #   5. pages       : publikasikan Allure (root) + Playwright report (/playwright) ke GitHub Pages
@@ -72,10 +74,27 @@ jobs:
       - name: Jalankan Playwright
         run: npx playwright test --shard=${{ matrix.shard }}/2
 
+      - name: Test database (SQL) setelah test UI
+        if: ${{ !cancelled() }}
+        working-directory: db-tests
+        env:
+          DB_RUN_LABEL: setelah test UI (shard ${{ matrix.shard }})
+          DB_SUITES: integrity
+        run: |
+          npm ci
+          npm test
+
       - name: Log aplikasi (jika gagal)
         if: failure()
         working-directory: .
         run: docker compose logs --tail=200
+
+      - uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: allure-results-db-ui-${{ matrix.shard }}
+          path: db-tests/allure-results
+          retention-days: 7
 
       - uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
@@ -115,6 +134,15 @@ jobs:
       - name: Jalankan Postman collection
         run: npm test -- --env-var baseUrl=http://127.0.0.1:8080
 
+      - name: Test database (SQL) setelah test API
+        if: ${{ !cancelled() }}
+        working-directory: db-tests
+        env:
+          DB_RUN_LABEL: setelah test API
+        run: |
+          npm ci
+          npm test
+
       - name: Log aplikasi (jika gagal)
         if: failure()
         working-directory: .
@@ -132,6 +160,13 @@ jobs:
         with:
           name: allure-results-api
           path: api-tests/allure-results
+          retention-days: 7
+
+      - uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: allure-results-db-api
+          path: db-tests/allure-results
           retention-days: 7
 
   report:

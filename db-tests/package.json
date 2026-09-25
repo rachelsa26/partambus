@@ -1,0 +1,13 @@
+{
+  "name": "partambus-db-tests",
+  "version": "1.0.0",
+  "description": "Test integritas data & constraint database PARTAMBUS (SQL)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node run.mjs"
+  },
+  "dependencies": {
+    "mysql2": "^3.24.4"
+  }
+}
