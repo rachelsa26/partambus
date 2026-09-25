@@ -10,7 +10,7 @@ Repositori ini adalah **portofolio Quality Assurance** saya: aplikasi nyata yang
 | Lapisan | Tool | Status | Isi |
 | --- | --- | --- | --- |
 | UI end-to-end | Playwright + TypeScript | ✅ 49 test | Login, hak akses (RBAC), produk, kasir (POS), sesi kas, keamanan dasar. Detail: [`e2e/README.md`](e2e/README.md) |
-| API / HTTP | Postman + Newman | ✅ 53 request, 127 assertion | Login & cookie sesi, CSRF, endpoint JSON kasir, idempotensi checkout, sesi kas, void, akses per role. Detail: [`api-tests/`](api-tests) |
+| API / HTTP | Postman + Newman | ✅ 56 request, 133 assertion | Login & cookie sesi, CSRF, endpoint JSON kasir, idempotensi checkout, sesi kas, void, akses per role. Detail: [`api-tests/`](api-tests) |
 | Database | SQL + runner Node | ✅ 30 test | 20 cek integritas data (ledger stok, penjualan, pembayaran, sesi kas) + 10 cek constraint, dijalankan setelah test API dan UI. Detail: [`db-tests/`](db-tests) |
 | Performance | k6 | 🗓️ Direncanakan | Load, stress, dan race condition checkout serentak |
 
@@ -41,7 +41,7 @@ Beberapa keputusan desain:
 
 ## Temuan
 
-Temuan lengkap (severity, langkah, status) ada di [`e2e/README.md`](e2e/README.md#temuan-selama-pengujian). Ringkasnya: 1 critical (sudah diperbaiki), 2 medium (open redirect, zona waktu transaksi yang ditemukan test database), beberapa temuan low, UX, dan aksesibilitas.
+Temuan lengkap (severity, langkah, status) ada di [`e2e/README.md`](e2e/README.md#temuan-selama-pengujian). Ringkasnya: 1 critical (sudah diperbaiki), 3 medium (open redirect, zona waktu transaksi, produk harga Rp0), beberapa temuan low, UX, dan aksesibilitas, plus temuan kualitas data asli (stok tanpa riwayat ledger). Dua temuan medium ditemukan oleh test database.
 
 ## Teknologi
 

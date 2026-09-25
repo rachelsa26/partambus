@@ -2664,6 +2664,188 @@
               ]
             }
           }
+        },
+        {
+          "name": "[KNOWN BUG #10] Produk bisa disimpan dengan harga jual Rp0",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('priceZeroCode', `API-HARGA0-${Date.now()}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// @allure.label.epic:API",
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "// BUG: satuan yang bisa dijual seharusnya wajib punya harga > 0 (BR-009/BR-010).",
+                  "// Validasi sekarang hanya menolak harga < 0, jadi Rp0 diterima dan kasir bisa menjual gratis.",
+                  "// Test ini memastikan bug MASIH ADA. Saat bug diperbaiki (form menolak Rp0), test ini gagal:",
+                  "// ubah assertion menjadi status 200 + pesan error sebagai penjaga regresi.",
+                  "pm.test('KNOWN BUG #10 masih ada: produk harga Rp0 tersimpan', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/products/index.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/create.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "create.php"
+              ]
+            },
+            "description": "Ditemukan oleh test database #18 saat dijalankan pada data asli toko (22 satuan berharga Rp0).",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "code",
+                  "value": "{{priceZeroCode}}",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Produk harga nol {{priceZeroCode}}",
+                  "type": "text"
+                },
+                {
+                  "key": "base_unit_name",
+                  "value": "PCS",
+                  "type": "text"
+                },
+                {
+                  "key": "low_stock_threshold_base",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "base_can_sell",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "base_can_purchase",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "base_selling_price",
+                  "value": "0",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bersihkan: cari produk harga Rp0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// @allure.label.epic:API",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const m = pm.response.text().match(/products\\/edit\\.php\\?id=(\\d+)/);",
+                  "pm.test('Produk uji ditemukan di daftar produk', () => pm.expect(m).to.not.be.null);",
+                  "if (m) pm.collectionVariables.set('priceZeroProductId', m[1]);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/index.php?q={{priceZeroCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{priceZeroCode}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bersihkan: hapus produk harga Rp0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// @allure.label.epic:API",
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Kembali ke daftar produk', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/products/index.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/delete.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "delete.php"
+              ]
+            },
+            "description": "Produk uji dihapus supaya tidak ikut tertangkap test database #18 (satuan jual tanpa harga).",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "product_id",
+                  "value": "{{priceZeroProductId}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
         }
       ]
     }
@@ -2691,6 +2873,14 @@
     },
     {
       "key": "saleNumber",
+      "value": ""
+    },
+    {
+      "key": "priceZeroCode",
+      "value": ""
+    },
+    {
+      "key": "priceZeroProductId",
       "value": ""
     }
   ]
