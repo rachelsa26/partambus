@@ -45,3 +45,8 @@ export const seededProducts = {
 export function rupiah(amount: number): string {
   return `Rp${Math.round(amount).toLocaleString('id-ID')}`;
 }
+
+/** Format angka seperti kolom DECIMAL(15,2) yang dikembalikan MySQL: 6000 -> "6000.00". */
+export function decimal(amount: number): string {
+  return amount.toFixed(2);
+}

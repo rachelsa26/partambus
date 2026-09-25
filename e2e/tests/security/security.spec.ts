@@ -2,17 +2,22 @@ import { env } from '../../src/config/env';
 import { expect, test } from '../../src/fixtures/test';
 
 test.describe('Keamanan dasar', { tag: '@security' }, () => {
-  test('form tanpa CSRF token ditolak dengan 403', async ({ asOwner, db }) => {
-    const response = await asOwner.request.post('/suppliers/create.php', {
-      form: { name: 'Supplier tanpa CSRF' },
+  // Login owner hanya terjadi di test yang memakai `page`; test yang memakai
+  // fixture `request` berjalan sebagai pengunjung tanpa login.
+  test.use({ loginAs: 'owner' });
+
+  test('form tanpa CSRF token ditolak dengan 403', async ({ page, db }) => {
+    const supplierName = `Supplier tanpa CSRF ${Date.now()}`;
+
+    const response = await page.request.post('/suppliers/create.php', {
+      form: { name: supplierName },
       maxRedirects: 0,
     });
 
     expect(response.status()).toBe(403);
     expect(await response.text()).toContain('CSRF check gagal');
     // Tidak boleh ada data yang tersimpan.
-    const audit = await db.latestAudit('supplier_created');
-    expect(audit?.after_value ?? '').not.toContain('Supplier tanpa CSRF');
+    expect(await db.supplierExists(supplierName)).toBe(false);
   });
 
   test('login tanpa CSRF token ditolak', async ({ request }) => {
@@ -72,9 +77,9 @@ test.describe('Keamanan dasar', { tag: '@security' }, () => {
           'suppliers/create.php meneruskan return_to ke header Location tanpa validasi. "//evil.example" mengarahkan user ke domain lain.',
       },
     },
-    async ({ asOwner, api }) => {
+    async ({ page, api }) => {
       test.fail(); // Hapus baris ini setelah bug diperbaiki.
-      await asOwner.goto('/suppliers/create.php');
+      await page.goto('/suppliers/create.php');
 
       const response = await api.submitForm('/suppliers/create.php', {
         name: `Supplier redirect ${Date.now()}`,

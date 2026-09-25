@@ -68,11 +68,19 @@ export class Database {
     return rows as { qty_delta_base: number; balance_after_base: number; code: string }[];
   }
 
-  async latestAudit(action: string) {
+  /** Audit log pembuatan produk milik kode tertentu (bukan sekadar audit terakhir). */
+  async productCreatedAudit(code: string) {
     return this.one<{ entity_id: number; after_value: string }>(
-      'SELECT entity_id, after_value FROM audit_logs WHERE action = ? ORDER BY id DESC LIMIT 1',
-      [action],
+      `SELECT entity_id, after_value FROM audit_logs
+        WHERE action = 'product_created' AND JSON_VALUE(after_value, '$.code') = ?
+        ORDER BY id DESC LIMIT 1`,
+      [code],
     );
+  }
+
+  async supplierExists(name: string): Promise<boolean> {
+    const row = await this.one('SELECT id FROM suppliers WHERE name = ?', [name]);
+    return row !== undefined;
   }
 
   /**

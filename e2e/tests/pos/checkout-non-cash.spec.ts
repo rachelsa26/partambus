@@ -1,4 +1,4 @@
-import { rupiah, seededProducts } from '../../src/data/factory';
+import { decimal, rupiah, seededProducts } from '../../src/data/factory';
 import { expect, test } from '../../src/fixtures/test';
 
 /**
@@ -8,34 +8,42 @@ import { expect, test } from '../../src/fixtures/test';
  * pada saat bersamaan.
  */
 test.describe('POS - pembayaran non-tunai', { tag: '@pos' }, () => {
-  test.beforeEach(async ({ asCashier, posPage }) => {
-    await asCashier.goto(posPage.path);
+  test.use({ loginAs: 'cashier' });
+
+  test.beforeEach(async ({ posPage }) => {
+    await posPage.goto();
   });
 
-  test('kasir menjual 3 item via QRIS dan stok berkurang', { tag: '@smoke' }, async ({ posPage, db, asCashier }) => {
+  test('kasir menjual 3 item via QRIS dan stok berkurang', { tag: '@smoke' }, async ({ posPage, salesHistoryPage, db }) => {
     const { kopi } = seededProducts;
+    const qty = 3;
+    const total = kopi.price * qty;
 
-    await posPage.addFromSearch(kopi);
-    await posPage.setQuantity(kopi.name, 3);
-    await expect(posPage.total).toHaveText(rupiah(kopi.price * 3));
+    await test.step('tambah 3 kopi ke keranjang', async () => {
+      await posPage.addFromSearch(kopi);
+      await posPage.setQuantity(kopi.name, qty);
+      await expect(posPage.total).toHaveText(rupiah(total));
+    });
 
-    await posPage.payWith('QRIS');
-    const { saleNumber } = await posPage.expectSaleCompleted();
-    await expect(posPage.successTotal).toHaveText(rupiah(kopi.price * 3));
+    const { saleNumber } = await test.step('bayar dengan QRIS', async () => {
+      await posPage.payWith('QRIS');
+      const result = await posPage.expectSaleCompleted();
+      await expect(posPage.successTotal).toHaveText(rupiah(total));
+      expect(result.saleNumber).toMatch(/^SL-\d{8}-\d{4}$/);
+      return result;
+    });
 
-    expect(saleNumber).toMatch(/^SL-\d{8}-\d{4}$/);
-    const sale = await db.sale(saleNumber);
-    expect(sale).toMatchObject({ status: 'completed', total: '6000.00' });
-
-    const payment = await db.payment(saleNumber);
-    expect(payment).toMatchObject({ method: 'qris', amount: '6000.00', cash_received: null });
-
-    const movements = await db.saleStockMovements(saleNumber);
-    expect(movements).toEqual([expect.objectContaining({ code: kopi.code, qty_delta_base: -3 })]);
+    await test.step('database: penjualan, pembayaran, dan ledger stok tercatat', async () => {
+      expect(await db.sale(saleNumber)).toMatchObject({ status: 'completed', total: decimal(total) });
+      expect(await db.payment(saleNumber)).toMatchObject({ method: 'qris', amount: decimal(total), cash_received: null });
+      expect(await db.saleStockMovements(saleNumber)).toEqual([
+        expect.objectContaining({ code: kopi.code, qty_delta_base: -qty }),
+      ]);
+    });
 
     await test.step('transaksi muncul di riwayat penjualan', async () => {
-      await asCashier.goto('/sales/index.php');
-      await expect(asCashier.getByText(saleNumber)).toBeVisible();
+      await salesHistoryPage.goto();
+      await expect(salesHistoryPage.sale(saleNumber)).toBeVisible();
     });
   });
 

@@ -25,7 +25,7 @@ dieksekusi otomatis di **GitHub Actions** setiap push, pull request, dan setiap 
 e2e/
 ├── src/
 │   ├── config/env.ts          # Semua konfigurasi dari env var (.env), dengan default untuk Docker
-│   ├── fixtures/test.ts       # Custom fixtures: asOwner, asCashier, db, api, page objects
+│   ├── fixtures/test.ts       # Custom fixtures: opsi loginAs, db, api, page objects
 │   ├── pages/                 # Page Object Model
 │   ├── api/app-client.ts      # Klien HTTP yang paham CSRF: login & setup data tanpa UI
 │   ├── db/database.ts         # Assertion langsung ke database (stok, ledger, pembayaran, audit)
@@ -36,8 +36,9 @@ e2e/
 
 Keputusan desain yang disengaja:
 
-- **Login lewat HTTP, bukan UI.** Hanya `login.spec.ts` yang menguji form login. Test lain login via `AppClient`
-  (GET form → ambil CSRF token → POST), jadi lebih cepat dan tiap test mendapat **sesi PHP sendiri**. Ini penting
+- **Login lewat HTTP, bukan UI.** Hanya `login.spec.ts` yang menguji form login. Test lain cukup menulis
+  `test.use({ loginAs: 'cashier' })`; fixture login via `AppClient` (GET form → ambil CSRF token → POST), jadi lebih
+  cepat dan tiap test mendapat **sesi PHP sendiri**. Ini penting
   karena keranjang POS disimpan di session: `storageState` bersama akan membuat test paralel saling menimpa keranjang.
 - **UI action → DB assertion.** Test POS tidak berhenti di "halaman sukses tampil"; test juga memeriksa `sales`,
   `payments`, dan ledger `stock_movements` di database.
@@ -45,6 +46,9 @@ Keputusan desain yang disengaja:
   itu sendiri, bukan selisih saldo, karena test lain bisa menjual produk yang sama pada saat bersamaan.
 - **State global diisolasi secara eksplisit.** Aplikasi hanya mengizinkan satu sesi kas terbuka. Skenario kas
   dikumpulkan dalam satu `describe` mode serial yang diawali reset kondisi, bukan diandalkan pada urutan file.
+- **Konvensi Page Object:** Page Object berisi locator dan aksi; `expect` di dalamnya hanya untuk menunggu aksi
+  selesai, kecuali method `expect...` yang dipakai ulang. Verifikasi hasil ditulis di test, dipecah dengan `test.step`
+  supaya langkahnya terbaca di report.
 - **Locator berbasis aksesibilitas** (`getByRole`, `getByLabel`). Tempat yang terpaksa memakai CSS selector diberi
   komentar, karena itu sekaligus temuan aksesibilitas (lihat bawah).
 - **Bug yang diketahui = test yang ditandai `test.fail()`.** Test tetap hijau selama bug ada. Saat bug diperbaiki, test

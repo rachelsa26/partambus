@@ -18,32 +18,40 @@ const ownerOnlyMenus = [
 const sharedMenus = ['Dashboard', 'Kasir (POS)', 'Riwayat Penjualan', 'Cash Session', 'Produk'];
 
 test.describe('Hak akses berdasarkan role', { tag: '@rbac' }, () => {
-  test('owner melihat semua menu', async ({ asOwner, dashboardPage }) => {
-    await asOwner.goto(dashboardPage.path);
+  test.describe('owner', () => {
+    test.use({ loginAs: 'owner' });
 
-    for (const label of [...sharedMenus, ...ownerOnlyMenus.map((m) => m.label)]) {
-      await expect(dashboardPage.sidebarLink(label), `menu ${label}`).toBeVisible();
-    }
-  });
+    test('owner melihat semua menu', async ({ dashboardPage }) => {
+      await dashboardPage.goto();
 
-  test('kasir tidak melihat menu khusus owner', async ({ asCashier, dashboardPage }) => {
-    await asCashier.goto(dashboardPage.path);
-
-    for (const label of sharedMenus) {
-      await expect(dashboardPage.sidebarLink(label), `menu ${label}`).toBeVisible();
-    }
-    for (const { label } of ownerOnlyMenus) {
-      await expect(dashboardPage.sidebarLink(label), `menu ${label}`).toHaveCount(0);
-    }
-  });
-
-  // Menyembunyikan menu saja tidak cukup: URL-nya juga harus ditolak server.
-  for (const { label, path } of ownerOnlyMenus) {
-    test(`kasir mendapat 403 saat membuka ${label} langsung lewat URL`, async ({ asCashier }) => {
-      const response = await asCashier.goto(path);
-
-      expect(response?.status()).toBe(403);
-      await expect(asCashier.locator('body')).toContainText('Akses ditolak');
+      for (const label of [...sharedMenus, ...ownerOnlyMenus.map((m) => m.label)]) {
+        await expect(dashboardPage.sidebarLink(label), `menu ${label}`).toBeVisible();
+      }
     });
-  }
+  });
+
+  test.describe('kasir', () => {
+    test.use({ loginAs: 'cashier' });
+
+    test('kasir tidak melihat menu khusus owner', async ({ dashboardPage }) => {
+      await dashboardPage.goto();
+
+      for (const label of sharedMenus) {
+        await expect(dashboardPage.sidebarLink(label), `menu ${label}`).toBeVisible();
+      }
+      for (const { label } of ownerOnlyMenus) {
+        await expect(dashboardPage.sidebarLink(label), `menu ${label}`).toHaveCount(0);
+      }
+    });
+
+    // Menyembunyikan menu saja tidak cukup: URL-nya juga harus ditolak server.
+    for (const { label, path } of ownerOnlyMenus) {
+      test(`kasir mendapat 403 saat membuka ${label} langsung lewat URL`, async ({ page }) => {
+        const response = await page.goto(path);
+
+        expect(response?.status()).toBe(403);
+        await expect(page.locator('body')).toContainText('Akses ditolak');
+      });
+    }
+  });
 });

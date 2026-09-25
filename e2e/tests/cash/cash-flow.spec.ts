@@ -1,4 +1,4 @@
-import { rupiah, seededProducts } from '../../src/data/factory';
+import { decimal, rupiah, seededProducts } from '../../src/data/factory';
 import { expect, test } from '../../src/fixtures/test';
 
 /**
@@ -9,25 +9,28 @@ import { expect, test } from '../../src/fixtures/test';
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Sesi kas & pembayaran tunai', { tag: '@cash' }, () => {
+  test.use({ loginAs: 'cashier' });
+
   const openingCash = 100_000;
   const { kopi } = seededProducts;
   const qty = 3;
   const saleTotal = kopi.price * qty; // Rp6.000
   const cashReceived = 10_000;
+  const expectedCash = openingCash + saleTotal;
+  const shortage = 1_000;
 
   test.beforeAll(async ({ db }) => {
     await db.closeAllCashSessions();
   });
 
-  test('tunai tidak bisa dipilih sebelum sesi kas dibuka', async ({ asCashier, posPage }) => {
-    await asCashier.goto(posPage.path);
+  test('tunai tidak bisa dipilih sebelum sesi kas dibuka', async ({ posPage }) => {
+    await posPage.goto();
 
     await expect(posPage.noCashSessionWarning).toBeVisible();
     await expect(posPage.paymentMethod('Tunai')).toBeDisabled();
   });
 
-  test('kasir membuka sesi kas', async ({ asCashier, cashSessionPage, db }) => {
-    await asCashier.goto(cashSessionPage.path);
+  test('kasir membuka sesi kas', async ({ cashSessionPage, db }) => {
     await cashSessionPage.open(openingCash);
 
     await expect(cashSessionPage.successFlash).toHaveText(`Sesi kas dibuka dengan kas awal ${rupiah(openingCash)}.`);
@@ -35,32 +38,42 @@ test.describe('Sesi kas & pembayaran tunai', { tag: '@cash' }, () => {
     expect(Number(session?.opening_cash)).toBe(openingCash);
   });
 
-  test('sesi kas kedua tidak bisa dibuka selama masih ada yang aktif', async ({ asOwner, cashSessionPage }) => {
-    await asOwner.goto('/cash/open.php');
+  test.describe('sebagai owner', () => {
+    test.use({ loginAs: 'owner' });
 
-    await expect(asOwner).toHaveURL(/\/cash\/index\.php$/);
-    await expect(cashSessionPage.errorFlash).toHaveText('Sudah ada sesi kas aktif.');
-  });
+    test('sesi kas kedua tidak bisa dibuka selama masih ada yang aktif', async ({ page, cashSessionPage }) => {
+      await cashSessionPage.gotoOpenForm();
 
-  test('pembayaran tunai menghitung kembalian dengan benar', { tag: '@smoke' }, async ({ asCashier, posPage, db }) => {
-    await asCashier.goto(posPage.path);
-    await posPage.addFromSearch(kopi);
-    await posPage.setQuantity(kopi.name, qty);
-
-    await posPage.payWith('Tunai', cashReceived);
-    const { saleNumber } = await posPage.expectSaleCompleted();
-
-    await expect(posPage.successChange).toHaveText(rupiah(cashReceived - saleTotal));
-    expect(await db.payment(saleNumber)).toMatchObject({
-      method: 'cash',
-      amount: '6000.00',
-      cash_received: '10000.00',
-      change_amount: '4000.00',
+      await expect(page).toHaveURL(/\/cash\/index\.php$/);
+      await expect(cashSessionPage.errorFlash).toHaveText('Sudah ada sesi kas aktif.');
     });
   });
 
-  test('uang diterima kurang dari total ditolak', async ({ asCashier, posPage }) => {
-    await asCashier.goto(posPage.path);
+  test('pembayaran tunai menghitung kembalian dengan benar', { tag: '@smoke' }, async ({ posPage, db }) => {
+    await test.step(`tambah ${qty} kopi ke keranjang`, async () => {
+      await posPage.goto();
+      await posPage.addFromSearch(kopi);
+      await posPage.setQuantity(kopi.name, qty);
+    });
+
+    const { saleNumber } = await test.step(`bayar tunai ${rupiah(cashReceived)}`, async () => {
+      await posPage.payWith('Tunai', cashReceived);
+      return posPage.expectSaleCompleted();
+    });
+
+    await test.step('kembalian benar di layar dan di database', async () => {
+      await expect(posPage.successChange).toHaveText(rupiah(cashReceived - saleTotal));
+      expect(await db.payment(saleNumber)).toMatchObject({
+        method: 'cash',
+        amount: decimal(saleTotal),
+        cash_received: decimal(cashReceived),
+        change_amount: decimal(cashReceived - saleTotal),
+      });
+    });
+  });
+
+  test('uang diterima kurang dari total ditolak', async ({ posPage }) => {
+    await posPage.goto();
     await posPage.addFromSearch(kopi);
 
     await posPage.payWith('Tunai', kopi.price - 500);
@@ -69,29 +82,32 @@ test.describe('Sesi kas & pembayaran tunai', { tag: '@cash' }, () => {
     await expect(posPage.successView).toBeHidden();
   });
 
-  test('tutup sesi dengan selisih wajib mengisi catatan', async ({ asCashier, cashSessionPage }) => {
-    const expectedCash = openingCash + saleTotal;
-    await asCashier.goto(cashSessionPage.path);
+  test('tutup sesi dengan selisih wajib mengisi catatan', async ({ cashSessionPage }) => {
+    await cashSessionPage.close(expectedCash - shortage);
 
-    await cashSessionPage.close(expectedCash - 1_000);
-
-    await expect(cashSessionPage.errorFlash).toContainText(`Alasan wajib diisi karena ada selisih kas (${rupiah(-1_000)}).`);
+    await expect(cashSessionPage.errorFlash).toContainText(`Alasan wajib diisi karena ada selisih kas (${rupiah(-shortage)}).`);
   });
 
-  test('tutup sesi dengan catatan menyimpan selisih kas', async ({ asCashier, cashSessionPage, db }) => {
-    const expectedCash = openingCash + saleTotal;
-    await asCashier.goto(cashSessionPage.path);
-    await asCashier.goto('/cash/close.php');
-    await expect(cashSessionPage.expectedCashText).toHaveText(`Kas diharapkan: ${rupiah(expectedCash)}`);
+  test('tutup sesi dengan catatan menyimpan selisih kas', async ({ cashSessionPage, db }) => {
+    const note = 'Uang receh kurang saat hitung fisik';
 
-    await cashSessionPage.close(expectedCash - 1_000, 'Uang receh kurang saat hitung fisik');
+    await test.step('form tutup sesi menampilkan kas yang diharapkan', async () => {
+      await cashSessionPage.gotoCloseForm();
+      await expect(cashSessionPage.expectedCashText).toHaveText(`Kas diharapkan: ${rupiah(expectedCash)}`);
+    });
 
-    await expect(cashSessionPage.successFlash).toHaveText(`Sesi kas ditutup. Selisih: ${rupiah(-1_000)}.`);
-    expect(await db.lastClosedCashSession()).toMatchObject({
-      expected_cash: `${expectedCash}.00`,
-      actual_cash: `${expectedCash - 1_000}.00`,
-      difference: '-1000.00',
-      note: 'Uang receh kurang saat hitung fisik',
+    await test.step('tutup sesi dengan catatan', async () => {
+      await cashSessionPage.close(expectedCash - shortage, note);
+      await expect(cashSessionPage.successFlash).toHaveText(`Sesi kas ditutup. Selisih: ${rupiah(-shortage)}.`);
+    });
+
+    await test.step('database: selisih dan catatan tersimpan', async () => {
+      expect(await db.lastClosedCashSession()).toMatchObject({
+        expected_cash: decimal(expectedCash),
+        actual_cash: decimal(expectedCash - shortage),
+        difference: decimal(-shortage),
+        note,
+      });
     });
   });
 });
