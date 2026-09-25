@@ -1,0 +1,21 @@
+{
+  "_catatan": "Hasil load test resmi (npm run load) di laptop penulis. Dipakai halaman depan report. Perbarui setelah menjalankan ulang load test.",
+  "date": "2026-09-25",
+  "environment": "Laptop Windows, Docker Desktop (WSL 2), k6 v2.2.0",
+  "duration": "5 menit",
+  "peakUsers": "10 kasir + 2 owner",
+  "requests": 3440,
+  "errorRate": 0,
+  "salesCreated": 496,
+  "thresholdsPassed": 11,
+  "thresholdsTotal": 11,
+  "endpoints": [
+    { "name": "Semua request", "median": 8, "p95": 28, "target": 800 },
+    { "name": "Cari produk", "median": 7, "p95": 12, "target": 500 },
+    { "name": "Scan barcode", "median": 8, "p95": 14, "target": 300 },
+    { "name": "Tambah ke keranjang", "median": 6, "p95": 12, "target": 800 },
+    { "name": "Checkout (QRIS)", "median": 21, "p95": 36, "target": 1000 },
+    { "name": "Laporan penjualan", "median": 14, "p95": 19, "target": 1500 },
+    { "name": "Login", "median": 111, "p95": 295, "target": 1000 }
+  ]
+}

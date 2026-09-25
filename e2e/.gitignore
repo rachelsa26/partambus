@@ -8,3 +8,5 @@ allure-results/
 allure-report/
 all-allure-results/
 site/
+api-report/
+perf-report/

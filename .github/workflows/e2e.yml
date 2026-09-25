@@ -9,9 +9,11 @@
 #      db          : setelah test API dan tiap shard UI, query SQL memeriksa integritas data yang
 #                    baru dibuat (db-tests/). Constraint database dicek sekali di job API.
 #   4. report      : - gabungkan shard Playwright -> satu HTML report (artifact "playwright-report")
-#                    - gabungkan hasil UI + API -> satu Allure dashboard (artifact "allure-report")
-#   5. pages       : publikasikan Allure (root) + Playwright report (/playwright) ke GitHub Pages
-#                    (hanya saat push ke main, jika repo PUBLIK dan Pages sudah diaktifkan: Settings > Pages > Source: GitHub Actions)
+#                    - gabungkan hasil UI + API + DB + performa -> satu Allure dashboard (artifact "allure-report")
+#                    - susun semuanya jadi satu situs dengan halaman depan (artifact "qa-report-site")
+#   5. pages       : publikasikan situs report ke GitHub Pages: halaman depan ringkasan (root),
+#                    Allure (/allure), Playwright (/playwright), Newman (/api), k6 (/perf)
+#                    (push ke main, jadwal malam, atau Run workflow; jika repo PUBLIK dan Pages sudah diaktifkan: Settings > Pages > Source: GitHub Actions)
 
 name: QA Tests
 
@@ -244,21 +246,37 @@ jobs:
           path: e2e/allure-report
           retention-days: 14
 
+      - uses: actions/download-artifact@v7
+        continue-on-error: true # kalau job API gagal total, situs tetap dibuat tanpa bagian ini
+        with:
+          name: api-report
+          path: e2e/api-report
+
+      - uses: actions/download-artifact@v7
+        continue-on-error: true # kalau job API gagal total, situs tetap dibuat tanpa bagian ini
+        with:
+          name: perf-report
+          path: e2e/perf-report
+
+      # Halaman depan + Allure (/allure) + Playwright (/playwright) + Newman (/api) + k6 (/perf)
       - name: Susun situs report
-        run: |
-          mkdir -p site
-          cp -r allure-report/. site/
-          cp -r playwright-report site/playwright
+        run: node scripts/build-site.mjs
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: qa-report-site
+          path: e2e/site
+          retention-days: 14
 
       - uses: actions/upload-pages-artifact@v5
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.repository.private == false
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.event.repository.private == false
         with:
           path: e2e/site
 
   pages:
     name: Publikasikan report
     needs: report
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.repository.private == false
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.event.repository.private == false
     runs-on: ubuntu-24.04
     permissions:
       pages: write

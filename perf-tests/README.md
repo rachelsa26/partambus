@@ -52,7 +52,27 @@ k6 run -e BASE_URL=http://localhost:8000 -e CASHIER_USER=... -e CASHIER_PASS=...
 
 Variabel yang tersedia: `BASE_URL`, `CASHIER_USER`, `CASHIER_PASS`, `OWNER_USER`, `OWNER_PASS`, `PRODUCT_BARCODE`, `SEARCH_TERMS`, `MIN_STOCK`, `RACE_BUYERS`, `RACE_STOCK`. Jangan jalankan load atau stress ke server produksi.
 
-## Hasil
+## Hasil load test
+
+Dijalankan 25 September 2026 di laptop Windows (Docker Desktop + WSL 2, aplikasi dan database di container), k6 v2.2.0. Durasi 5 menit, sampai 12 pengguna virtual bersamaan (10 kasir + 2 owner).
+
+**Semua 11 threshold tercapai.** 3.440 request tanpa satu pun error, 496 transaksi tersimpan (100% checkout berhasil), 100% check lulus.
+
+| Endpoint                         | Median | p95    | Target p95 |
+| -------------------------------- | ------ | ------ | ---------- |
+| Semua request                    | 8 ms   | 28 ms  | < 800 ms   |
+| Cari produk (search-as-you-type) | 7 ms   | 12 ms  | < 500 ms   |
+| Scan barcode                     | 8 ms   | 14 ms  | < 300 ms   |
+| Tambah ke keranjang              | 6 ms   | 12 ms  | < 800 ms   |
+| Checkout (bayar QRIS)            | 21 ms  | 36 ms  | < 1000 ms  |
+| Laporan penjualan                | 14 ms  | 19 ms  | < 1500 ms  |
+| Login                            | 111 ms | 295 ms | < 1000 ms  |
+
+Kesimpulan: pada beban 5x toko normal, aplikasi masih jauh di bawah target (p95 keseluruhan 28 ms dari batas 800 ms). Login paling lambat karena hashing password (bcrypt) memang sengaja berat untuk keamanan.
+
+Grafik lengkap: `reports/load-dashboard.html` (dibuat ulang setiap `npm run load`). Angka resmi di atas juga disimpan di [`load-baseline.json`](load-baseline.json) dan ditampilkan di [halaman report](https://rachelsa26.github.io/partambus/); perbarui file itu setiap kali menjalankan ulang load test.
+
+## File hasil
 
 Setiap run menghasilkan:
 
