@@ -5,7 +5,7 @@
 PARTAMBUS adalah aplikasi **POS (kasir) dan manajemen toko retail**: produk multi-satuan, penjualan, pembelian, stok, sesi kas, laporan, dan hak akses owner/kasir.
 Repositori ini adalah **portofolio Quality Assurance** saya: aplikasi nyata yang diuji dari tampilan, API, database, sampai performa, dan semuanya berjalan otomatis di CI.
 
-**📊 Report langsung (diperbarui otomatis setiap push dan setiap malam): [rachelsa26.github.io/partambus](https://rachelsa26.github.io/partambus/)**
+**📊 Report langsung (diperbarui otomatis setiap push dan setiap hari Minggu): [rachelsa26.github.io/partambus](https://rachelsa26.github.io/partambus/)**
 
 ## Cakupan pengujian
 
@@ -30,7 +30,7 @@ flowchart LR
   I --> H[Allure dashboard<br/>UI + API + DB + Performance]
 ```
 
-Setiap push, pull request, dan setiap malam (02:00 WIB), GitHub Actions membangun aplikasi dari nol di Docker lalu menjalankan seluruh test UI, API, performa (smoke dan race condition), dan database.
+Setiap push, pull request, dan setiap hari Minggu (19:00 WIB), GitHub Actions membangun aplikasi dari nol di Docker lalu menjalankan seluruh test UI, API, performa (smoke dan race condition), dan database.
 
 Hasil UI, API, database, dan performa diterbitkan ke [GitHub Pages](https://rachelsa26.github.io/partambus/): halaman depan berisi ringkasan per lapisan, lalu **satu dashboard Allure Report** (grup `UI`, `API`, `DB`, dan `Performance`), lengkap dengan langkah tiap test.
 Laporan per tool tetap tersedia: Playwright HTML report (trace, video, screenshot saat gagal) dan Newman htmlextra.

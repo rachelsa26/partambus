@@ -269,7 +269,7 @@ function page(stats, copied, perf) {
 <body>
 <main>
   <h1>PARTAMBUS QA Report</h1>
-  <p class="intro">Hasil pengujian otomatis aplikasi kasir (POS) PARTAMBUS: tampilan, API, database, dan performa. Semua test dijalankan ulang oleh GitHub Actions di setiap push dan setiap malam, pada aplikasi yang dibangun dari nol di Docker.</p>
+  <p class="intro">Hasil pengujian otomatis aplikasi kasir (POS) PARTAMBUS: tampilan, API, database, dan performa. Semua test dijalankan ulang oleh GitHub Actions di setiap push dan setiap hari Minggu, pada aplikasi yang dibangun dari nol di Docker.</p>
   <div class="status">
     <span class="pill ${overall}">${esc(overallText)}</span>
     <span>Run terakhir: ${esc(when)} WIB</span>

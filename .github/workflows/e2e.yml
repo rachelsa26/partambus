@@ -1,6 +1,6 @@
 # PARTAMBUS - pipeline test otomatis
 #
-# Jalan setiap push ke main, setiap pull request, setiap malam (02:00 WIB),
+# Jalan setiap push ke main, setiap pull request, setiap Minggu (19:00 WIB),
 # dan bisa dijalankan manual dari tab Actions ("Run workflow").
 #
 #   1. lint        : typecheck (tsc), ESLint, Prettier
@@ -13,7 +13,7 @@
 #                    - susun semuanya jadi satu situs dengan halaman depan (artifact "qa-report-site")
 #   5. pages       : publikasikan situs report ke GitHub Pages: halaman depan ringkasan (root),
 #                    Allure (/allure), Playwright (/playwright), Newman (/api), k6 (/perf)
-#                    (push ke main, jadwal malam, atau Run workflow; jika repo PUBLIK dan Pages sudah diaktifkan: Settings > Pages > Source: GitHub Actions)
+#                    (push ke main, jadwal mingguan, atau Run workflow; jika repo PUBLIK dan Pages sudah diaktifkan: Settings > Pages > Source: GitHub Actions)
 
 name: QA Tests
 
@@ -22,7 +22,7 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    - cron: '0 19 * * *' # 19:00 UTC = 02:00 WIB
+    - cron: '0 12 * * 0' # Minggu 12:00 UTC = Minggu 19:00 WIB
   workflow_dispatch:
 
 concurrency:
