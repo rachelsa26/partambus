@@ -1,0 +1,2644 @@
+{
+  "info": {
+    "_postman_id": "77ff152d-4726-5d8f-be2e-fd5a5f77e883",
+    "name": "PARTAMBUS API Tests",
+    "description": "Test API/HTTP untuk PARTAMBUS: autentikasi, CSRF, endpoint JSON kasir, idempotensi checkout, sesi kas, dan hak akses per role.\n\nJalankan berurutan (Run collection). Butuh lingkungan test Docker: `docker compose up -d --build --wait` (http://localhost:8080).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 Autentikasi",
+      "item": [
+        {
+          "name": "Logout (reset sesi)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /auth/login.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/auth/login.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout.php"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Halaman login bisa dibuka dan berisi CSRF token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Username', () => pm.expect(pm.response.text()).to.include('Username'));",
+                  "",
+                  "const m = pm.response.text().match(/name=\"csrf_token\" value=\"([a-f0-9]+)\"/);",
+                  "pm.test('Halaman berisi CSRF token', () => pm.expect(m, 'csrf_token tidak ditemukan').to.not.be.null);",
+                  "if (m) pm.collectionVariables.set('csrf', m[1]);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login.php"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login ditolak: password salah",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Username atau password salah, atau akun tidak aktif.', () => pm.expect(pm.response.text()).to.include('Username atau password salah, atau akun tidak aktif.'));",
+                  "pm.test('Tidak diarahkan ke dashboard', () => pm.expect(pm.response.headers.get('Location')).to.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{ownerUsername}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "PasswordSalah!",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login ditolak: akun nonaktif walau password benar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Username atau password salah, atau akun tidak aktif.', () => pm.expect(pm.response.text()).to.include('Username atau password salah, atau akun tidak aktif.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{inactiveUsername}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{inactivePassword}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login ditolak: field kosong",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Username dan password wajib diisi.', () => pm.expect(pm.response.text()).to.include('Username dan password wajib diisi.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login tanpa CSRF token ditolak (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Halaman menampilkan: CSRF check gagal', () => pm.expect(pm.response.text()).to.include('CSRF check gagal'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "{{ownerUsername}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{ownerPassword}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login owner berhasil + cookie sesi aman",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /dashboard.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/dashboard.php'));",
+                  "",
+                  "const setCookie = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(' ; ');",
+                  "pm.test('Session ID diganti setelah login (cegah session fixation)', () => pm.expect(setCookie).to.include('PHPSESSID='));",
+                  "pm.test('Cookie sesi HttpOnly', () => pm.expect(setCookie.toLowerCase()).to.include('httponly'));",
+                  "pm.test('Cookie sesi SameSite=Lax', () => pm.expect(setCookie.toLowerCase()).to.include('samesite=lax'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{ownerUsername}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{ownerPassword}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard bisa dibuka setelah login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Dashboard', () => pm.expect(pm.response.text()).to.include('Dashboard'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard.php"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /auth/login.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/auth/login.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout.php"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard setelah logout diarahkan ke login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /auth/login.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/auth/login.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard.php"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Kasir: scan, keranjang, checkout",
+      "item": [
+        {
+          "name": "Logout (reset sesi)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /auth/login.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/auth/login.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout.php"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buka halaman login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const m = pm.response.text().match(/name=\"csrf_token\" value=\"([a-f0-9]+)\"/);",
+                  "pm.test('Halaman berisi CSRF token', () => pm.expect(m, 'csrf_token tidak ditemukan').to.not.be.null);",
+                  "if (m) pm.collectionVariables.set('csrf', m[1]);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login.php"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login sebagai kasir",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /dashboard.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/dashboard.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{cashierUsername}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{cashierPassword}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Kosongkan keranjang",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "pos_action",
+                  "value": "clear_cart",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Scan barcode produk yang ada -> action add",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type JSON', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'));",
+                  "const body = pm.response.json();",
+                  "pm.test('action = add', () => pm.expect(body.action).to.eql('add'));",
+                  "pm.test('product_id & unit_id berupa angka', () => {",
+                  "  pm.expect(body.product_id).to.be.a('number');",
+                  "  pm.expect(body.unit_id).to.be.a('number');",
+                  "});",
+                  "pm.collectionVariables.set('productId', body.product_id);",
+                  "pm.collectionVariables.set('unitId', body.unit_id);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php?ajax=scan&q={{kopiBarcode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "ajax",
+                  "value": "scan"
+                },
+                {
+                  "key": "q",
+                  "value": "{{kopiBarcode}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Scan kode tidak dikenal -> action list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('action = list', () => pm.expect(body.action).to.eql('list'));",
+                  "pm.test('Tidak ada product_id', () => pm.expect(body).to.not.have.property('product_id'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php?ajax=scan&q=KODE-TIDAK-ADA-999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "ajax",
+                  "value": "scan"
+                },
+                {
+                  "key": "q",
+                  "value": "KODE-TIDAK-ADA-999"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Scan produk stok habis -> list + peringatan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('action = list (tidak auto-add)', () => pm.expect(body.action).to.eql('list'));",
+                  "pm.test('Ada peringatan stok tidak cukup', () => pm.expect(body.warning).to.include('tidak cukup (sisa 0)'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php?ajax=scan&q=QA-HABIS",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "ajax",
+                  "value": "scan"
+                },
+                {
+                  "key": "q",
+                  "value": "QA-HABIS"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Scan dengan kode kosong -> action list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('action = list', () => pm.expect(pm.response.json().action).to.eql('list'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php?ajax=scan&q=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ],
+              "query": [
+                {
+                  "key": "ajax",
+                  "value": "scan"
+                },
+                {
+                  "key": "q",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Checkout keranjang kosong ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
+                  "const body = pm.response.json();",
+                  "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
+                  "pm.test('Pesan error: Keranjang masih kosong.', () => pm.expect(body.errors.join(' | ')).to.include('Keranjang masih kosong.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Requested-With",
+                "value": "XMLHttpRequest"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pos/checkout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "checkout.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "method",
+                  "value": "qris",
+                  "type": "text"
+                },
+                {
+                  "key": "request_token",
+                  "value": "apa-saja",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tambah ke keranjang: qty 0 ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Jumlah harus bilangan bulat positif.', () => pm.expect(pm.response.text()).to.include('Jumlah harus bilangan bulat positif.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "pos_action",
+                  "value": "add_to_cart",
+                  "type": "text"
+                },
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "unit_id",
+                  "value": "{{unitId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "qty",
+                  "value": "0",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tambah ke keranjang: qty desimal ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Jumlah harus bilangan bulat positif.', () => pm.expect(pm.response.text()).to.include('Jumlah harus bilangan bulat positif.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "pos_action",
+                  "value": "add_to_cart",
+                  "type": "text"
+                },
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "unit_id",
+                  "value": "{{unitId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "qty",
+                  "value": "1.5",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tambah ke keranjang: unit bukan milik produk ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Produk/unit tidak valid atau tidak bisa dijual.', () => pm.expect(pm.response.text()).to.include('Produk/unit tidak valid atau tidak bisa dijual.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "pos_action",
+                  "value": "add_to_cart",
+                  "type": "text"
+                },
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "unit_id",
+                  "value": "999999",
+                  "type": "text"
+                },
+                {
+                  "key": "qty",
+                  "value": "2",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tambah 2 kopi ke keranjang",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /pos/index.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/pos/index.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "pos_action",
+                  "value": "add_to_cart",
+                  "type": "text"
+                },
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "unit_id",
+                  "value": "{{unitId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "qty",
+                  "value": "2",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buka halaman kasir -> ambil request_token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const m = pm.response.text().match(/name=\"request_token\" value=\"([a-f0-9]+)\"/);",
+                  "pm.test('Halaman kasir berisi request_token (kunci idempotensi)', () => pm.expect(m).to.not.be.null);",
+                  "if (m) pm.collectionVariables.set('requestToken', m[1]);",
+                  "pm.test('Halaman menampilkan: Rp4.000', () => pm.expect(pm.response.text()).to.include('Rp4.000'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Checkout dengan request_token palsu ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
+                  "const body = pm.response.json();",
+                  "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
+                  "pm.test('Pesan error: Sesi pembayaran sudah kedaluwarsa. Silakan ulangi.', () => pm.expect(body.errors.join(' | ')).to.include('Sesi pembayaran sudah kedaluwarsa. Silakan ulangi.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Requested-With",
+                "value": "XMLHttpRequest"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pos/checkout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "checkout.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "method",
+                  "value": "qris",
+                  "type": "text"
+                },
+                {
+                  "key": "request_token",
+                  "value": "token-palsu",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Checkout dengan metode bayar tidak dikenal ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
+                  "const body = pm.response.json();",
+                  "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
+                  "pm.test('Pesan error: Pilih metode pembayaran.', () => pm.expect(body.errors.join(' | ')).to.include('Pilih metode pembayaran.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Requested-With",
+                "value": "XMLHttpRequest"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pos/checkout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "checkout.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "method",
+                  "value": "bitcoin",
+                  "type": "text"
+                },
+                {
+                  "key": "request_token",
+                  "value": "{{requestToken}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Checkout tanpa CSRF token ditolak (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Requested-With",
+                "value": "XMLHttpRequest"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pos/checkout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "checkout.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "method",
+                  "value": "qris",
+                  "type": "text"
+                },
+                {
+                  "key": "request_token",
+                  "value": "{{requestToken}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Checkout QRIS berhasil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(body.success).to.eql(true));",
+                  "pm.test('Nomor transaksi berformat SL-YYYYMMDD-NNNN', () => pm.expect(body.sale_number).to.match(/^SL-\\d{8}-\\d{4}$/));",
+                  "pm.test('Total = 2 x Rp2.000 = 4000', () => pm.expect(body.total).to.eql(4000));",
+                  "pm.test('Metode = qris', () => pm.expect(body.method).to.eql('qris'));",
+                  "pm.test('Non-tunai tidak punya kembalian', () => pm.expect(body.change_amount).to.be.null);",
+                  "pm.collectionVariables.set('saleId', body.sale_id);",
+                  "pm.collectionVariables.set('saleNumber', body.sale_number);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Requested-With",
+                "value": "XMLHttpRequest"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pos/checkout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "checkout.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "method",
+                  "value": "qris",
+                  "type": "text"
+                },
+                {
+                  "key": "request_token",
+                  "value": "{{requestToken}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Idempotensi: kirim ulang checkout yang sama tidak membuat transaksi kedua",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
+                  "const body = pm.response.json();",
+                  "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
+                  "pm.test('Pesan error: Keranjang masih kosong.', () => pm.expect(body.errors.join(' | ')).to.include('Keranjang masih kosong.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Requested-With",
+                "value": "XMLHttpRequest"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pos/checkout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "checkout.php"
+              ]
+            },
+            "description": "Mensimulasikan kasir menekan Bayar dua kali. Setelah transaksi pertama, keranjang dikosongkan dan request_token dibuang, jadi request kedua tidak boleh menghasilkan penjualan baru.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "method",
+                  "value": "qris",
+                  "type": "text"
+                },
+                {
+                  "key": "request_token",
+                  "value": "{{requestToken}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "RBAC: kasir tidak boleh void transaksi (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Halaman menampilkan: Akses ditolak', () => pm.expect(pm.response.text()).to.include('Akses ditolak'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sales/void.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                "void.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "id",
+                  "value": "{{saleId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "reason",
+                  "value": "Coba void oleh kasir",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "RBAC: kasir tidak boleh membuka halaman Pengguna (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Halaman menampilkan: Akses ditolak', () => pm.expect(pm.response.text()).to.include('Akses ditolak'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/index.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "index.php"
+              ]
+            }
+          }
+        },
+        {
+          "name": "RBAC: kasir tidak boleh menambah produk lewat POST langsung (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Halaman menampilkan: Akses ditolak', () => pm.expect(pm.response.text()).to.include('Akses ditolak'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/create.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "create.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "code",
+                  "value": "HACK-001",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Produk dari kasir",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Sesi kas & pembayaran tunai",
+      "item": [
+        {
+          "name": "Reset: tutup sesi kas yang mungkin masih terbuka",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /cash/index.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/cash/index.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cash/close.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cash",
+                "close.php"
+              ]
+            },
+            "description": "Idempoten: jika ada sesi terbuka, ditutup; jika tidak ada, server langsung redirect.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "actual_cash",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "Direset oleh Postman sebelum test",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tambah 2 kopi ke keranjang",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "pos_action",
+                  "value": "add_to_cart",
+                  "type": "text"
+                },
+                {
+                  "key": "product_id",
+                  "value": "{{productId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "unit_id",
+                  "value": "{{unitId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "qty",
+                  "value": "2",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buka halaman kasir -> ambil request_token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const m = pm.response.text().match(/name=\"request_token\" value=\"([a-f0-9]+)\"/);",
+                  "pm.test('Halaman kasir berisi request_token (kunci idempotensi)', () => pm.expect(m).to.not.be.null);",
+                  "if (m) pm.collectionVariables.set('requestToken', m[1]);",
+                  "pm.test('Halaman menampilkan: Tunai tidak bisa dipilih: belum ada sesi kas aktif.', () => pm.expect(pm.response.text()).to.include('Tunai tidak bisa dipilih: belum ada sesi kas aktif.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pos/index.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "index.php"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bayar tunai tanpa sesi kas ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
+                  "const body = pm.response.json();",
+                  "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
+                  "pm.test('Pesan error: Belum ada sesi kas aktif.', () => pm.expect(body.errors.join(' | ')).to.include('Belum ada sesi kas aktif.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Requested-With",
+                "value": "XMLHttpRequest"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pos/checkout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "checkout.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "method",
+                  "value": "cash",
+                  "type": "text"
+                },
+                {
+                  "key": "cash_received",
+                  "value": "10000",
+                  "type": "text"
+                },
+                {
+                  "key": "request_token",
+                  "value": "{{requestToken}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buka sesi kas: kas awal negatif ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Kas awal harus angka &gt;= 0.', () => pm.expect(pm.response.text()).to.include('Kas awal harus angka &gt;= 0.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cash/open.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cash",
+                "open.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "opening_cash",
+                  "value": "-5000",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buka sesi kas Rp100.000",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /cash/index.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/cash/index.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cash/open.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cash",
+                "open.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "opening_cash",
+                  "value": "100000",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buka sesi kas kedua dicegah",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /cash/index.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/cash/index.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cash/open.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cash",
+                "open.php"
+              ]
+            },
+            "description": "Aplikasi hanya mengizinkan satu sesi kas terbuka: halaman langsung redirect tanpa membuat sesi baru.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "opening_cash",
+                  "value": "50000",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bayar tunai dengan uang kurang ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Respons berupa JSON', () => pm.response.to.be.json);",
+                  "const body = pm.response.json();",
+                  "pm.test('success = false', () => pm.expect(body.success).to.eql(false));",
+                  "pm.test('Pesan error: Uang diterima kurang dari total belanja.', () => pm.expect(body.errors.join(' | ')).to.include('Uang diterima kurang dari total belanja.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Requested-With",
+                "value": "XMLHttpRequest"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pos/checkout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "checkout.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "method",
+                  "value": "cash",
+                  "type": "text"
+                },
+                {
+                  "key": "cash_received",
+                  "value": "3000",
+                  "type": "text"
+                },
+                {
+                  "key": "request_token",
+                  "value": "{{requestToken}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bayar tunai Rp10.000 berhasil dengan kembalian Rp6.000",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('success = true', () => pm.expect(body.success).to.eql(true));",
+                  "pm.test('Metode = cash', () => pm.expect(body.method).to.eql('cash'));",
+                  "pm.test('Total = 4000', () => pm.expect(body.total).to.eql(4000));",
+                  "pm.test('Kembalian = 10000 - 4000 = 6000', () => pm.expect(body.change_amount).to.eql(6000));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Requested-With",
+                "value": "XMLHttpRequest"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pos/checkout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pos",
+                "checkout.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "method",
+                  "value": "cash",
+                  "type": "text"
+                },
+                {
+                  "key": "cash_received",
+                  "value": "10000",
+                  "type": "text"
+                },
+                {
+                  "key": "request_token",
+                  "value": "{{requestToken}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tutup sesi dengan selisih tanpa catatan ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Alasan wajib diisi karena ada selisih kas', () => pm.expect(pm.response.text()).to.include('Alasan wajib diisi karena ada selisih kas'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cash/close.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cash",
+                "close.php"
+              ]
+            },
+            "description": "Kas seharusnya 100.000 + 4.000 = 104.000. Dilaporkan 100.000, jadi selisih -4.000 wajib diberi alasan.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "actual_cash",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tutup sesi dengan selisih + catatan berhasil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /cash/index.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/cash/index.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cash/close.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cash",
+                "close.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "actual_cash",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "Selisih Rp4.000 (test Postman)",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Owner: void & supplier",
+      "item": [
+        {
+          "name": "Logout (reset sesi)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /auth/login.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/auth/login.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout.php"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buka halaman login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const m = pm.response.text().match(/name=\"csrf_token\" value=\"([a-f0-9]+)\"/);",
+                  "pm.test('Halaman berisi CSRF token', () => pm.expect(m, 'csrf_token tidak ditemukan').to.not.be.null);",
+                  "if (m) pm.collectionVariables.set('csrf', m[1]);"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login.php"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login sebagai owner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /dashboard.php', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/dashboard.php'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{ownerUsername}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{ownerPassword}}",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Void tanpa alasan ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Alasan void wajib diisi.', () => pm.expect(pm.response.text()).to.include('Alasan void wajib diisi.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sales/void.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                "void.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "id",
+                  "value": "{{saleId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "reason",
+                  "value": "",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Void transaksi QRIS berhasil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /sales/view.php?id=', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/sales/view.php?id='));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sales/void.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                "void.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "id",
+                  "value": "{{saleId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "reason",
+                  "value": "Salah input (test Postman)",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail transaksi berstatus void",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan status void', () => pm.expect(pm.response.text().toLowerCase()).to.include('void'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sales/view.php?id={{saleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                "view.php"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{saleId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Void kedua kali tidak diproses ulang",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "pm.test('Diarahkan ke /sales/view.php?id=', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/sales/view.php?id='));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sales/void.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sales",
+                "void.php"
+              ]
+            },
+            "description": "Transaksi yang sudah void langsung diarahkan kembali tanpa mengembalikan stok dua kali.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "id",
+                  "value": "{{saleId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "reason",
+                  "value": "Void ulang",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tambah supplier tanpa CSRF ditolak (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Halaman menampilkan: CSRF check gagal', () => pm.expect(pm.response.text()).to.include('CSRF check gagal'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers/create.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers",
+                "create.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "name",
+                  "value": "Supplier tanpa CSRF",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tambah supplier tanpa nama ditolak",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Halaman menampilkan: Nama supplier wajib diisi.', () => pm.expect(pm.response.text()).to.include('Nama supplier wajib diisi.'));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers/create.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers",
+                "create.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "[KNOWN BUG #2] Open redirect lewat return_to",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
+                  "const loc = pm.response.headers.get('Location') || '';",
+                  "// BUG: seharusnya Location tetap di domain sendiri (tidak diawali //).",
+                  "// Test ini sengaja memastikan bug MASIH ADA. Saat bug diperbaiki, test ini",
+                  "// akan gagal: ubah assertion menjadi .to.not.match(/^\\/\\//) sebagai penjaga regresi.",
+                  "pm.test('KNOWN BUG #2 masih ada: redirect ke domain luar', () => pm.expect(loc).to.match(/^\\/\\/evil\\.example/));"
+                ]
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/suppliers/create.php",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "suppliers",
+                "create.php"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "csrf_token",
+                  "value": "{{csrf}}",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Supplier redirect {{$timestamp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "return_to",
+                  "value": "//evil.example/phish",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "csrf",
+      "value": ""
+    },
+    {
+      "key": "productId",
+      "value": ""
+    },
+    {
+      "key": "unitId",
+      "value": ""
+    },
+    {
+      "key": "requestToken",
+      "value": ""
+    },
+    {
+      "key": "saleId",
+      "value": ""
+    },
+    {
+      "key": "saleNumber",
+      "value": ""
+    }
+  ]
+}

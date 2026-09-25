@@ -6,10 +6,11 @@
 #   1. lint        : typecheck (tsc), ESLint, Prettier
 #   2. e2e         : build app + MariaDB lewat Docker, Playwright dibagi 2 shard
 #   3. report      : gabungkan hasil shard -> satu HTML report (artifact "playwright-report")
-#   4. pages       : publikasikan report ke GitHub Pages
+#   4. api         : Postman collection dijalankan Newman terhadap app di Docker (artifact "api-report")
+#   5. pages       : publikasikan report ke GitHub Pages
 #                    (hanya saat push ke main, jika repo PUBLIK dan Pages sudah diaktifkan: Settings > Pages > Source: GitHub Actions)
 
-name: E2E Tests
+name: QA Tests
 
 on:
   push:
@@ -81,6 +82,42 @@ jobs:
           name: blob-report-${{ matrix.shard }}
           path: e2e/blob-report
           retention-days: 7
+
+  api:
+    name: API tests (Newman)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: api-tests
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Jalankan aplikasi + database (Docker)
+        working-directory: .
+        run: docker compose up -d --build --wait
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api-tests/package-lock.json
+      - run: npm ci
+
+      - name: Jalankan Postman collection
+        run: npm test -- --env-var baseUrl=http://127.0.0.1:8080
+
+      - name: Log aplikasi (jika gagal)
+        if: failure()
+        working-directory: .
+        run: docker compose logs --tail=200
+
+      - uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: api-report
+          path: api-tests/reports
+          retention-days: 14
 
   report:
     name: Gabungkan report

@@ -10,7 +10,7 @@ Repositori ini adalah **portofolio Quality Assurance** saya: aplikasi nyata yang
 | Lapisan | Tool | Status | Isi |
 | --- | --- | --- | --- |
 | UI end-to-end | Playwright + TypeScript | ✅ 49 test | Login, hak akses (RBAC), produk, kasir (POS), sesi kas, keamanan dasar. Detail: [`e2e/README.md`](e2e/README.md) |
-| API / HTTP | Postman + Newman | 🚧 Dikerjakan | Kontrak endpoint, CSRF, idempotensi checkout, akses per role |
+| API / HTTP | Postman + Newman | ✅ 53 request, 127 assertion | Login & cookie sesi, CSRF, endpoint JSON kasir, idempotensi checkout, sesi kas, void, akses per role. Detail: [`api-tests/`](api-tests) |
 | Database | SQL + runner Node | 🗓️ Direncanakan | Integritas ledger stok, total penjualan vs item, sesi kas, constraint |
 | Performance | k6 | 🗓️ Direncanakan | Load, stress, dan race condition checkout serentak |
 
@@ -21,10 +21,12 @@ flowchart LR
   A[git push] --> B[Lint & typecheck]
   B --> C[Docker: app + MariaDB<br/>database bersih]
   C --> D[Playwright<br/>2 shard paralel]
+  C --> F[Newman<br/>Postman collection]
   D --> E[HTML report<br/>trace, video, screenshot]
+  F --> G[API report<br/>htmlextra]
 ```
 
-Setiap push, pull request, dan setiap malam (02:00 WIB), GitHub Actions membangun aplikasi dari nol di Docker lalu menjalankan seluruh test.
+Setiap push, pull request, dan setiap malam (02:00 WIB), GitHub Actions membangun aplikasi dari nol di Docker lalu menjalankan seluruh test UI dan API.
 
 Beberapa keputusan desain:
 
