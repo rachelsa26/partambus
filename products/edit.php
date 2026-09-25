@@ -181,8 +181,8 @@ if (is_post()) {
             $unitNamesSeen[] = $lower;
         }
 
-        if ($canSell && ($sellingPrice === '' || !is_numeric($sellingPrice) || (float) $sellingPrice < 0)) {
-            $errors[] = 'Harga jual unit "' . $unitName . '" wajib diisi (>= 0) karena ditandai bisa dijual.';
+        if ($canSell && ($sellingPrice === '' || !is_numeric($sellingPrice) || (float) $sellingPrice <= 0)) {
+            $errors[] = 'Harga jual unit "' . $unitName . '" wajib diisi (lebih dari 0) karena ditandai bisa dijual.';
         }
 
         $existingUnitUpdates[$uid] = [
@@ -223,8 +223,8 @@ if (is_post()) {
         if (!ctype_digit($conversion) || (int) $conversion <= 0) {
             $errors[] = 'Faktor konversi unit "' . $unitName . '" harus bilangan bulat positif.';
         }
-        if ($canSell && ($sellingPrice === '' || !is_numeric($sellingPrice) || (float) $sellingPrice < 0)) {
-            $errors[] = 'Harga jual unit "' . $unitName . '" wajib diisi (>= 0).';
+        if ($canSell && ($sellingPrice === '' || !is_numeric($sellingPrice) || (float) $sellingPrice <= 0)) {
+            $errors[] = 'Harga jual unit "' . $unitName . '" wajib diisi (lebih dari 0).';
         }
 
         $newUnits[] = [
@@ -427,7 +427,7 @@ require __DIR__ . '/../includes/header.php';
       <div class="form-row">
         <div class="form-group">
           <label for="base_unit_name">Satuan Dasar</label>
-          <?= render_unit_select($unitsList, $product['base_unit_name'], 'base_unit_name', 'base_unit_name_other', $hasStockMovements) ?>
+          <?= render_unit_select($unitsList, $product['base_unit_name'], 'base_unit_name', 'base_unit_name_other', $hasStockMovements, '', 'base_unit_name') ?>
           <?php if ($hasStockMovements): ?>
             <p class="form-hint"><?= partambus_icon('info', 13) ?> Terkunci karena sudah ada pergerakan stok.</p>
           <?php endif; ?>
@@ -476,17 +476,17 @@ require __DIR__ . '/../includes/header.php';
       <?php foreach ($originalUnits as $u): $uid = (int) $u['id']; $isUsed = isset($usedUnitIds[$uid]); ?>
         <tr class="unit-row-existing">
           <td>
-            <?= render_unit_select($unitsList, $u['unit_name'], "existing_units[$uid][unit_name]", "existing_units[$uid][unit_name_other]", $u['is_base'] || $isUsed, 'width:140px') ?>
+            <?= render_unit_select($unitsList, $u['unit_name'], "existing_units[$uid][unit_name]", "existing_units[$uid][unit_name_other]", $u['is_base'] || $isUsed, 'width:140px', '', 'Nama unit') ?>
             <?php if ($u['is_base']): ?><span class="badge badge-info">base</span><?php endif; ?>
           </td>
           <td>
-            <input type="number" name="existing_units[<?= $uid ?>][conversion_factor]" value="<?= (int) $u['conversion_factor'] ?>" min="1" step="1"
+            <input type="number" name="existing_units[<?= $uid ?>][conversion_factor]" value="<?= (int) $u['conversion_factor'] ?>" min="1" step="1" aria-label="Konversi <?= e($u['unit_name']) ?>"
               <?= ($u['is_base'] || $isUsed) ? 'readonly' : '' ?> style="width:70px">
           </td>
-          <td><input type="checkbox" name="existing_units[<?= $uid ?>][can_sell]" value="1" <?= $u['can_sell'] ? 'checked' : '' ?>></td>
-          <td><input type="checkbox" name="existing_units[<?= $uid ?>][can_purchase]" value="1" <?= $u['can_purchase'] ? 'checked' : '' ?>></td>
-          <td><input type="number" name="existing_units[<?= $uid ?>][selling_price]" value="<?= e((string) $u['selling_price']) ?>" min="0" step="1" style="width:100px"></td>
-          <td><input type="checkbox" name="existing_units[<?= $uid ?>][active]" value="1" <?= $u['active'] ? 'checked' : '' ?>></td>
+          <td><input type="checkbox" name="existing_units[<?= $uid ?>][can_sell]" value="1" aria-label="<?= e($u['unit_name']) ?> dijual" <?= $u['can_sell'] ? 'checked' : '' ?>></td>
+          <td><input type="checkbox" name="existing_units[<?= $uid ?>][can_purchase]" value="1" aria-label="<?= e($u['unit_name']) ?> dibeli" <?= $u['can_purchase'] ? 'checked' : '' ?>></td>
+          <td><input type="number" name="existing_units[<?= $uid ?>][selling_price]" value="<?= e((string) $u['selling_price']) ?>" aria-label="Harga jual <?= e($u['unit_name']) ?>" min="0" step="1" style="width:100px"></td>
+          <td><input type="checkbox" name="existing_units[<?= $uid ?>][active]" value="1" aria-label="<?= e($u['unit_name']) ?> aktif" <?= $u['active'] ? 'checked' : '' ?>></td>
           <td>
             <input type="checkbox" name="existing_units[<?= $uid ?>][delete]" value="1" class="unit-delete-flag hidden">
             <?php if ($u['is_base']): ?>
@@ -525,11 +525,11 @@ require __DIR__ . '/../includes/header.php';
   <div class="unit-row">
     <div class="form-group unit-col-name">
       <label>Nama Unit</label>
-      <?= render_unit_select($unitsList, '', 'units[__INDEX__][unit_name]', 'units[__INDEX__][unit_name_other]') ?>
+      <?= render_unit_select($unitsList, '', 'units[__INDEX__][unit_name]', 'units[__INDEX__][unit_name_other]', false, '', '', 'Nama unit') ?>
     </div>
     <div class="form-group unit-col-num">
       <label>Konversi ke Satuan Dasar</label>
-      <input type="number" name="units[__INDEX__][conversion_factor]" min="1" step="1" placeholder="mis. 10">
+      <input type="number" name="units[__INDEX__][conversion_factor]" min="1" step="1" placeholder="mis. 10" aria-label="Konversi ke satuan dasar">
     </div>
     <div class="form-group unit-col-check">
       <label class="checkbox-inline"><input type="checkbox" name="units[__INDEX__][can_sell]" value="1"> Dijual</label>
@@ -539,7 +539,7 @@ require __DIR__ . '/../includes/header.php';
     </div>
     <div class="form-group unit-col-num">
       <label>Harga Jual</label>
-      <input type="number" name="units[__INDEX__][selling_price]" min="0" step="1">
+      <input type="number" name="units[__INDEX__][selling_price]" min="1" step="1" aria-label="Harga jual">
     </div>
     <div class="unit-col-remove">
       <button type="button" class="btn btn-secondary btn-small" data-remove-unit-row>Hapus</button>

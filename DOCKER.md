@@ -16,7 +16,7 @@ Login database (keduanya): user `partambus`, password `partambus`, database `par
 Semua perintah di bawah dijalankan dari folder proyek:
 
 ```powershell
-cd C:\laragon\www\partambus
+cd C:\Projects\partambus
 ```
 
 ## Mode coding
@@ -33,7 +33,7 @@ docker compose -f docker-compose.dev.yml logs -f app
 ```
 
 Database coding pertama kali dibuat dari `database/schema.sql`, jadi hanya berisi user bawaan `owner`.
-Untuk memakai data yang sudah ada di Laragon, lihat bagian berikut.
+Untuk memasukkan data yang sudah ada (misalnya data dummy dari laptop lain), lihat bagian berikut.
 
 Setelah `composer.json` atau `docker/Dockerfile` berubah, jalankan:
 
@@ -41,30 +41,30 @@ Setelah `composer.json` atau `docker/Dockerfile` berubah, jalankan:
 docker compose -f docker-compose.dev.yml up -d --build --renew-anon-volumes
 ```
 
-## Memindahkan data dari Laragon (sekali saja)
+## Memasukkan data yang sudah ada (sekali saja)
 
-1. Nyalakan Laragon (Start All), supaya MySQL Laragon berjalan.
-2. Export database Laragon ke `backups/laragon-dump.sql` (folder ini tidak ikut ke Git):
+Data coding tidak ikut ke Git. Kalau Anda punya salinan database (file `.sql`, misalnya `backups/laragon-dump.sql`
+dari laptop lama), taruh di folder `backups/` lalu:
 
-   ```powershell
-   $dump = Get-ChildItem C:\laragon\bin\mysql -Recurse -Filter mysqldump.exe | Select-Object -First 1
-   & $dump.FullName -u root --routines --default-character-set=utf8mb4 --result-file=backups\laragon-dump.sql partambus
-   ```
-
-   Jika MySQL Laragon memakai password, tambahkan `-p` setelah `-u root`.
-3. Matikan Laragon (Stop All), lalu nyalakan Docker mode coding (lihat di atas).
-4. Import ke database coding:
+1. Nyalakan Docker mode coding (lihat di atas).
+2. Import ke database coding:
 
    ```powershell
    cmd /c "docker compose -f docker-compose.dev.yml exec -T db mariadb -upartambus -ppartambus partambus < backups\laragon-dump.sql"
    ```
 
-5. Buka http://localhost:8000 dan login dengan akun yang biasa Anda pakai di Laragon.
+3. Buka http://localhost:8000 dan login dengan akun yang ada di data tersebut.
 
-Jika import gagal dengan pesan `Unknown collation: 'utf8mb4_0900_ai_ci'` (dump dari MySQL 8), jalankan ini lalu ulangi langkah 4:
+Jika import gagal dengan pesan `Unknown collation: 'utf8mb4_0900_ai_ci'` (dump dari MySQL 8), jalankan ini lalu ulangi langkah 2:
 
 ```powershell
 (Get-Content backups\laragon-dump.sql -Raw) -replace 'utf8mb4_0900_ai_ci','utf8mb4_unicode_ci' | Set-Content backups\laragon-dump.sql -Encoding utf8
+```
+
+Membuat salinan database coding (misalnya sebelum ganti laptop):
+
+```powershell
+cmd /c "docker compose -f docker-compose.dev.yml exec -T db mariadb-dump -upartambus -ppartambus partambus > backups\coding-dump.sql"
 ```
 
 ## Mode test
@@ -85,7 +85,7 @@ docker compose down -v                  # reset database test ke kondisi awal
 
 | Gejala | Penyebab dan solusi |
 | --- | --- |
-| `port is already allocated` | Port dipakai aplikasi lain (misalnya Laragon). Matikan Laragon, atau ganti angka port kiri di file compose. |
+| `port is already allocated` | Port dipakai aplikasi lain. Matikan aplikasi itu, atau ganti angka port kiri di file compose. |
 | "Gagal terhubung ke database" setelah `up` | Database masih menyala. Tunggu 10-20 detik lalu refresh. |
 | Perubahan kode tidak muncul | Pastikan membuka port 8000 (coding), bukan 8080 (test). |
 | Ingin mulai ulang database coding dari nol | `docker compose -f docker-compose.dev.yml down -v` (SEMUA data coding hilang). |

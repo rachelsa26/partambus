@@ -11,8 +11,8 @@ Repositori ini adalah **portofolio Quality Assurance** saya: aplikasi nyata yang
 
 | Lapisan | Tool | Status | Isi |
 | --- | --- | --- | --- |
-| UI end-to-end | Playwright + TypeScript | ✅ 49 test | Login, hak akses (RBAC), produk, kasir (POS), sesi kas, keamanan dasar. Detail: [`e2e/README.md`](e2e/README.md) |
-| API / HTTP | Postman + Newman | ✅ 56 request, 133 assertion | Login & cookie sesi, CSRF, endpoint JSON kasir, idempotensi checkout, sesi kas, void, akses per role. Detail: [`api-tests/`](api-tests) |
+| UI end-to-end | Playwright + TypeScript | ✅ 55 test | Login, hak akses (RBAC), produk, kasir (POS), sesi kas, keamanan dasar, aksesibilitas, dashboard. Detail: [`e2e/README.md`](e2e/README.md) |
+| API / HTTP | Postman + Newman | ✅ 55 request, 132 assertion | Login & cookie sesi, CSRF, endpoint JSON kasir, idempotensi checkout, sesi kas, void, akses per role. Detail: [`api-tests/`](api-tests) |
 | Database | SQL + runner Node | ✅ 30 test | 20 cek integritas data (ledger stok, penjualan, pembayaran, sesi kas) + 10 cek constraint, dijalankan setelah test API dan UI. Detail: [`db-tests/`](db-tests) |
 | Performance | k6 | ✅ 4 skenario | Smoke, load (10 kasir: p95 28 ms, 0% error, 496 transaksi), stress (50 kasir), dan race condition: 30 kasir bayar serentak untuk stok 10, harus tepat 10 terjual. Detail: [`perf-tests/`](perf-tests) |
 
@@ -41,11 +41,7 @@ Beberapa keputusan desain:
 - **Login lewat HTTP untuk setup**, form login hanya diuji di test login. Lebih cepat, dan setiap test mendapat sesi PHP sendiri (keranjang kasir disimpan di sesi).
 - **Aman untuk paralel.** Data uji dibuat unik per test; stok diverifikasi dari baris ledger milik transaksi itu sendiri.
 - **Performa diukur dengan target, bukan sekadar dicatat.** Setiap skenario k6 punya threshold (misalnya checkout p95 < 1 detik); race condition membuktikan stok tidak pernah terjual melebihi persediaan.
-- **Bug yang diketahui = `test.fail()`.** Test tetap hijau selama bug ada, lalu otomatis menjadi penjaga regresi saat bug diperbaiki.
-
-## Temuan
-
-Temuan lengkap (severity, langkah, status) ada di [`e2e/README.md`](e2e/README.md#temuan-selama-pengujian). Ringkasnya: 1 critical (sudah diperbaiki), 3 medium (open redirect, zona waktu transaksi, produk harga Rp0), beberapa temuan low, UX, dan aksesibilitas. Dua temuan medium ditemukan oleh test database.
+- **Setiap bug yang diperbaiki punya test regresi.** Test dibuat gagal dulu karena bug, lalu lulus setelah perbaikan, sehingga bug yang sama tidak bisa kembali tanpa ketahuan.
 
 ## Teknologi
 
@@ -68,7 +64,7 @@ npx playwright show-report             # buka laporan Playwright
 
 cd ../api-tests
 npm ci
-npm test                               # 56 request API (Newman)
+npm test                               # 55 request API (Newman)
 
 cd ../perf-tests
 npm run smoke                          # tes performa singkat (k6)

@@ -299,7 +299,9 @@ ob_start();
   <?php else: ?>
     <div class="pos-results-list">
       <?php foreach ($posResults as $r): ?>
-        <div class="pos-result-row" title="Stok: <?= (int) $r['current_stock_base'] ?>">
+        <div class="pos-result-row" role="button" tabindex="0"
+             aria-label="Tambah <?= e($r['name']) ?> (<?= e($r['unit_name']) ?>) ke keranjang"
+             title="Stok: <?= (int) $r['current_stock_base'] ?>">
           <div class="pos-result-row-top">
             <span class="pos-result-name"><?= e($r['name']) ?></span>
             <span class="pos-result-price"><?= rupiah($r['selling_price']) ?></span>

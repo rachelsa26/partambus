@@ -1,4 +1,4 @@
-# PARTAMBUS - lingkungan CODING sehari-hari (pengganti Laragon)
+# PARTAMBUS - lingkungan CODING sehari-hari
 #
 #   docker compose -f docker-compose.dev.yml up -d --build   -> nyalakan
 #   docker compose -f docker-compose.dev.yml down            -> matikan (data TETAP aman)

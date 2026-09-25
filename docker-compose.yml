@@ -16,7 +16,7 @@ services:
       MARIADB_ROOT_PASSWORD: root
       TZ: Asia/Jakarta
     ports:
-      - "3307:3306" # 3307 supaya tidak bentrok dengan MySQL Laragon
+      - "3307:3306" # port database TEST di laptop (database coding memakai 3308)
     volumes:
       - db-data:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro

@@ -7,3 +7,12 @@ Options -Indexes
 <FilesMatch "^composer\.(json|lock)$">
     Require all denied
 </FilesMatch>
+
+# vendor/ (hasil composer, berisi installed.json yang membocorkan versi library)
+# dan includes/ (potongan halaman yang tidak boleh dibuka langsung) bukan untuk
+# publik. vendor/ tidak ikut Git, jadi aturannya ditaruh di sini, bukan di
+# vendor/.htaccess.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(vendor|includes)(/|$) - [F]
+</IfModule>

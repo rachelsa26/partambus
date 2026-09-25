@@ -268,11 +268,32 @@ function dashboard_short_rupiah(float $amount): string
     return 'Rp' . number_format($amount, 0, ',', '.');
 }
 
+/**
+ * Batas atas sumbu Y yang "bulat" (kelipatan 1, 2, 2.5, 5 x 10^n per garis),
+ * supaya label tidak berulang. Tanpa ini, omzet 0 menghasilkan label
+ * Rp0, Rp0, Rp1, Rp1, Rp1 karena skala 0..1 dibagi 4 lalu dibulatkan.
+ */
+function dashboard_nice_axis_max(float $max, int $steps, float $minStep = 1.0): float
+{
+    $rawStep = max($max / $steps, $minStep);
+    $magnitude = 10 ** floor(log10($rawStep));
+    foreach ([1, 2, 2.5, 5, 10] as $factor) {
+        if ($rawStep <= $factor * $magnitude) {
+            return $factor * $magnitude * $steps;
+        }
+    }
+
+    return 10 * $magnitude * $steps;
+}
+
 /** @param array<int, array<string, mixed>> $points */
 function dashboard_trend_chart(array $points, string $metricKey, string $ariaLabel, int $width = 640, int $height = 160): string
 {
     $values = array_map(static fn ($p) => (float) $p[$metricKey], $points);
-    $max = max($values) ?: 1.0;
+    $steps = 4;
+    $isMoney = DASHBOARD_METRICS[$metricKey]['kind'] === 'money';
+    // Uang: minimal Rp1rb per garis, supaya omzet kecil/nol tidak berlabel Rp1, Rp2, ...
+    $max = dashboard_nice_axis_max((float) max($values), $steps, $isMoney ? 1000.0 : 1.0);
     $padding = ['top' => 16, 'right' => 12, 'bottom' => 26, 'left' => 64];
     $plotW = $width - $padding['left'] - $padding['right'];
     $plotH = $height - $padding['top'] - $padding['bottom'];
@@ -280,7 +301,6 @@ function dashboard_trend_chart(array $points, string $metricKey, string $ariaLab
     $stepX = $n > 1 ? $plotW / ($n - 1) : 0;
     $labelStep = $n > 10 ? (int) ceil($n / 8) : 1;
     $dotRadius = $n > 20 ? 2.5 : 4;
-    $isMoney = DASHBOARD_METRICS[$metricKey]['kind'] === 'money';
 
     $coords = [];
     foreach ($values as $i => $v) {
@@ -291,7 +311,6 @@ function dashboard_trend_chart(array $points, string $metricKey, string $ariaLab
 
     $svg = '<svg viewBox="0 0 ' . $width . ' ' . $height . '" class="trend-chart-svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="' . e($ariaLabel) . '">';
 
-    $steps = 4;
     for ($s = 0; $s <= $steps; $s++) {
         $val = $max * $s / $steps;
         $y = round($padding['top'] + $plotH - ($s / $steps) * $plotH, 1);

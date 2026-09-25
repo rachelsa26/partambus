@@ -17,7 +17,12 @@ try {
             PDO::ATTR_EMULATE_PREPARES => false,
         ]
     );
+    // Samakan zona waktu sesi database dengan PHP (Asia/Jakarta, lihat bootstrap.php).
+    // Tanpa ini, NOW()/CURRENT_TIMESTAMP memakai jam server database (sering UTC di
+    // hosting), sehingga created_at bisa jatuh di tanggal berbeda dengan nomor
+    // transaksi yang dibuat dari jam PHP.
+    $pdo->exec("SET time_zone = '" . date('P') . "'");
 } catch (PDOException $e) {
     http_response_code(500);
-    die('Gagal terhubung ke database. Pastikan Laragon "Start All" sudah aktif dan database "partambus" sudah di-import. Detail: ' . htmlspecialchars($e->getMessage()));
+    die('Gagal terhubung ke database. Pastikan server database menyala dan database "partambus" sudah dibuat. Detail: ' . htmlspecialchars($e->getMessage()));
 }

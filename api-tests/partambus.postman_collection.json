@@ -2609,7 +2609,7 @@
           }
         },
         {
-          "name": "[KNOWN BUG #2] Open redirect lewat return_to",
+          "name": "Open redirect dicegah: return_to ke domain luar diabaikan",
           "event": [
             {
               "listen": "test",
@@ -2619,10 +2619,10 @@
                   "// @allure.label.epic:API",
                   "pm.test('Status 302', () => pm.response.to.have.status(302));",
                   "const loc = pm.response.headers.get('Location') || '';",
-                  "// BUG: seharusnya Location tetap di domain sendiri (tidak diawali //).",
-                  "// Test ini sengaja memastikan bug MASIH ADA. Saat bug diperbaiki, test ini",
-                  "// akan gagal: ubah assertion menjadi .to.not.match(/^\\/\\//) sebagai penjaga regresi.",
-                  "pm.test('KNOWN BUG #2 masih ada: redirect ke domain luar', () => pm.expect(loc).to.match(/^\\/\\/evil\\.example/));"
+                  "// Dulu bug #2: Location mengikuti return_to mentah sehingga //evil.example membawa user ke domain lain.",
+                  "// Sekarang return_to hanya boleh path internal .php; selain itu kembali ke daftar supplier.",
+                  "pm.test('Tidak redirect ke domain luar', () => pm.expect(loc).to.not.match(/^\\/\\//));",
+                  "pm.test('Kembali ke daftar supplier', () => pm.expect(loc).to.include('/suppliers/index.php'));"
                 ]
               }
             }
@@ -2666,7 +2666,7 @@
           }
         },
         {
-          "name": "[KNOWN BUG #10] Produk bisa disimpan dengan harga jual Rp0",
+          "name": "Produk dengan harga jual Rp0 ditolak",
           "event": [
             {
               "listen": "prerequest",
@@ -2683,12 +2683,9 @@
                 "type": "text/javascript",
                 "exec": [
                   "// @allure.label.epic:API",
-                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
-                  "// BUG: satuan yang bisa dijual seharusnya wajib punya harga > 0 (BR-009/BR-010).",
-                  "// Validasi sekarang hanya menolak harga < 0, jadi Rp0 diterima dan kasir bisa menjual gratis.",
-                  "// Test ini memastikan bug MASIH ADA. Saat bug diperbaiki (form menolak Rp0), test ini gagal:",
-                  "// ubah assertion menjadi status 200 + pesan error sebagai penjaga regresi.",
-                  "pm.test('KNOWN BUG #10 masih ada: produk harga Rp0 tersimpan', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/products/index.php'));"
+                  "// Dulu bug #10: validasi hanya menolak harga < 0, jadi Rp0 tersimpan dan kasir bisa menjual gratis.",
+                  "pm.test('Status 200 (form tampil lagi, tidak redirect)', () => pm.response.to.have.status(200));",
+                  "pm.test('Pesan error harga jual muncul', () => pm.expect(pm.response.text()).to.include('wajib diisi (lebih dari 0)'));"
                 ]
               }
             }
@@ -2758,7 +2755,7 @@
           }
         },
         {
-          "name": "Bersihkan: cari produk harga Rp0",
+          "name": "Produk harga Rp0 tidak tersimpan",
           "event": [
             {
               "listen": "test",
@@ -2767,9 +2764,7 @@
                 "exec": [
                   "// @allure.label.epic:API",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "const m = pm.response.text().match(/products\\/edit\\.php\\?id=(\\d+)/);",
-                  "pm.test('Produk uji ditemukan di daftar produk', () => pm.expect(m).to.not.be.null);",
-                  "if (m) pm.collectionVariables.set('priceZeroProductId', m[1]);"
+                  "pm.test('Produk uji tidak ada di daftar produk', () => pm.expect(pm.response.text()).to.not.match(/products\\/edit\\.php\\?id=\\d+/));"
                 ]
               }
             }
@@ -2793,55 +2788,6 @@
                 {
                   "key": "q",
                   "value": "{{priceZeroCode}}"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Bersihkan: hapus produk harga Rp0",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// @allure.label.epic:API",
-                  "pm.test('Status 302', () => pm.response.to.have.status(302));",
-                  "pm.test('Kembali ke daftar produk', () => pm.expect(pm.response.headers.get('Location') || '').to.include('/products/index.php'));"
-                ]
-              }
-            }
-          ],
-          "protocolProfileBehavior": {
-            "followRedirects": false
-          },
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/products/delete.php",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "products",
-                "delete.php"
-              ]
-            },
-            "description": "Produk uji dihapus supaya tidak ikut tertangkap test database #18 (satuan jual tanpa harga).",
-            "body": {
-              "mode": "urlencoded",
-              "urlencoded": [
-                {
-                  "key": "csrf_token",
-                  "value": "{{csrf}}",
-                  "type": "text"
-                },
-                {
-                  "key": "product_id",
-                  "value": "{{priceZeroProductId}}",
-                  "type": "text"
                 }
               ]
             }
@@ -2877,10 +2823,6 @@
     },
     {
       "key": "priceZeroCode",
-      "value": ""
-    },
-    {
-      "key": "priceZeroProductId",
       "value": ""
     }
   ]

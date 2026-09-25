@@ -866,11 +866,25 @@ document.addEventListener('keydown', function (event) {
 // the cart — handy on touch screens. Skip when the click landed on the "+"
 // button itself, since its own native click already submits the same form
 // (submitting again from here would double-add). ----
+function submitPosResultRow(row) {
+  var form = row.querySelector('form');
+  if (form) form.requestSubmit ? form.requestSubmit() : form.submit();
+}
+
 document.addEventListener('click', function (event) {
   var row = event.target.closest('.pos-result-row');
   if (!row || event.target.closest('button')) return;
-  var form = row.querySelector('form');
-  if (form) form.requestSubmit ? form.requestSubmit() : form.submit();
+  submitPosResultRow(row);
+});
+
+// Baris hasil pencarian punya role="button" + tabindex="0", jadi harus bisa
+// dipilih dengan keyboard seperti tombol biasa: Enter atau Spasi.
+document.addEventListener('keydown', function (event) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  var row = event.target.closest && event.target.closest('.pos-result-row');
+  if (!row || event.target !== row) return;
+  event.preventDefault();
+  submitPosResultRow(row);
 });
 
 // ---- Dashboard: range dropdown, chart metric switcher, and the

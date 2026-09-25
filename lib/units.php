@@ -73,14 +73,19 @@ function resolve_unit_input(PDO $pdo, string $selectValue, string $otherValue, s
  *
  * @param array<int, array{code:string, description:?string}> $unitsList
  */
-function render_unit_select(array $unitsList, string $currentValue, string $selectName, string $otherName, bool $disabled = false, string $style = ''): string
+function render_unit_select(array $unitsList, string $currentValue, string $selectName, string $otherName, bool $disabled = false, string $style = '', string $id = '', string $ariaLabel = ''): string
 {
     $codes = array_column($unitsList, 'code');
     $currentValue = trim($currentValue);
     $hasCurrent = $currentValue === '' || in_array($currentValue, $codes, true);
 
     $html = '<div data-unit-select-wrapper' . ($style !== '' ? ' style="' . e($style) . '"' : '') . '>';
-    $html .= '<select name="' . e($selectName) . '" data-unit-select' . ($disabled ? ' disabled' : '') . '>';
+    // id menghubungkan <label for> ke dropdown; aria-label dipakai di baris unit
+    // tambahan yang labelnya tidak bisa memakai for (id-nya dibuat dinamis).
+    $html .= '<select name="' . e($selectName) . '" data-unit-select'
+        . ($id !== '' ? ' id="' . e($id) . '"' : '')
+        . ($ariaLabel !== '' ? ' aria-label="' . e($ariaLabel) . '"' : '')
+        . ($disabled ? ' disabled' : '') . '>';
     $html .= '<option value="">-- pilih satuan --</option>';
 
     if (!$hasCurrent) {
@@ -95,7 +100,7 @@ function render_unit_select(array $unitsList, string $currentValue, string $sele
 
     $html .= '<option value="__other__">Lainnya...</option>';
     $html .= '</select>';
-    $html .= '<input type="text" name="' . e($otherName) . '" data-unit-other-input placeholder="Nama satuan baru" style="display:none;margin-top:6px" ' . ($disabled ? 'disabled' : '') . '>';
+    $html .= '<input type="text" name="' . e($otherName) . '" data-unit-other-input placeholder="Nama satuan baru" aria-label="Nama satuan baru" style="display:none;margin-top:6px" ' . ($disabled ? 'disabled' : '') . '>';
     if ($disabled) {
         // disabled fields never submit — carry the locked value forward explicitly
         $html .= '<input type="hidden" name="' . e($selectName) . '" value="' . e($currentValue) . '">';

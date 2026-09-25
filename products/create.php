@@ -78,8 +78,8 @@ if (is_post()) {
         $errors[] = 'Batas stok rendah harus berupa angka bulat >= 0.';
     }
 
-    if ($form['base_can_sell'] && ($form['base_selling_price'] === '' || !is_numeric($form['base_selling_price']) || (float) $form['base_selling_price'] < 0)) {
-        $errors[] = 'Harga jual satuan dasar wajib diisi (>= 0) karena satuan dasar ditandai bisa dijual.';
+    if ($form['base_can_sell'] && ($form['base_selling_price'] === '' || !is_numeric($form['base_selling_price']) || (float) $form['base_selling_price'] <= 0)) {
+        $errors[] = 'Harga jual satuan dasar wajib diisi (lebih dari 0) karena satuan dasar ditandai bisa dijual.';
     }
 
     $unitNamesSeen = $baseUnitName !== null ? [strtolower($baseUnitName)] : [];
@@ -97,8 +97,8 @@ if (is_post()) {
         }
         if ($row['can_sell']) {
             $hasSellableUnit = true;
-            if ($row['selling_price'] === '' || !is_numeric($row['selling_price']) || (float) $row['selling_price'] < 0) {
-                $errors[] = 'Harga jual untuk unit "' . $row['unit_name'] . '" wajib diisi (>= 0).';
+            if ($row['selling_price'] === '' || !is_numeric($row['selling_price']) || (float) $row['selling_price'] <= 0) {
+                $errors[] = 'Harga jual untuk unit "' . $row['unit_name'] . '" wajib diisi (lebih dari 0).';
             }
         }
     }
@@ -216,7 +216,7 @@ require __DIR__ . '/../includes/header.php';
   <div class="form-row">
     <div class="form-group">
       <label for="base_unit_name">Satuan Dasar (base unit)</label>
-      <?= render_unit_select($unitsList, $form['base_unit_select'] === '__other__' ? '' : $form['base_unit_select'], 'base_unit_name', 'base_unit_name_other') ?>
+      <?= render_unit_select($unitsList, $form['base_unit_select'] === '__other__' ? '' : $form['base_unit_select'], 'base_unit_name', 'base_unit_name_other', false, '', 'base_unit_name') ?>
       <p class="form-hint">Semua stok dihitung dalam satuan ini. Tidak bisa diubah setelah ada pergerakan stok.</p>
     </div>
     <div class="form-group">
@@ -233,7 +233,7 @@ require __DIR__ . '/../includes/header.php';
     </div>
     <div class="form-group" style="margin-top:10px">
       <label for="base_selling_price">Harga Jual per Satuan Dasar</label>
-      <input type="number" id="base_selling_price" name="base_selling_price" value="<?= e($form['base_selling_price']) ?>" min="0" step="1">
+      <input type="number" id="base_selling_price" name="base_selling_price" value="<?= e($form['base_selling_price']) ?>" min="1" step="1">
     </div>
   </div>
 
@@ -255,11 +255,11 @@ require __DIR__ . '/../includes/header.php';
   <div class="unit-row">
     <div class="form-group unit-col-name">
       <label>Nama Unit</label>
-      <?= render_unit_select($unitsList, '', 'units[__INDEX__][unit_name]', 'units[__INDEX__][unit_name_other]') ?>
+      <?= render_unit_select($unitsList, '', 'units[__INDEX__][unit_name]', 'units[__INDEX__][unit_name_other]', false, '', '', 'Nama unit') ?>
     </div>
     <div class="form-group unit-col-num">
       <label>Konversi ke Satuan Dasar</label>
-      <input type="number" name="units[__INDEX__][conversion_factor]" min="1" step="1" placeholder="mis. 10">
+      <input type="number" name="units[__INDEX__][conversion_factor]" min="1" step="1" placeholder="mis. 10" aria-label="Konversi ke satuan dasar">
     </div>
     <div class="form-group unit-col-check">
       <label class="checkbox-inline"><input type="checkbox" name="units[__INDEX__][can_sell]" value="1"> Dijual</label>
@@ -269,7 +269,7 @@ require __DIR__ . '/../includes/header.php';
     </div>
     <div class="form-group unit-col-num">
       <label>Harga Jual</label>
-      <input type="number" name="units[__INDEX__][selling_price]" min="0" step="1">
+      <input type="number" name="units[__INDEX__][selling_price]" min="1" step="1" aria-label="Harga jual">
     </div>
     <div class="unit-col-remove">
       <button type="button" class="btn btn-secondary btn-small" data-remove-unit-row>Hapus</button>

@@ -8,7 +8,22 @@ function e(?string $value): string
 
 function rupiah(float|string|null $amount): string
 {
-    return 'Rp' . number_format((float) $amount, 0, ',', '.');
+    $value = (float) $amount;
+
+    return ($value < 0 ? '-' : '') . 'Rp' . number_format(abs($value), 0, ',', '.');
+}
+
+/**
+ * Hanya izinkan path internal aplikasi (mis. "/purchases/create.php") sebagai
+ * tujuan redirect. Nilai lain ("//evil.example", "https://...", "/\\evil")
+ * diganti $fallback, supaya parameter seperti return_to tidak bisa dipakai
+ * untuk mengarahkan user ke situs lain (open redirect).
+ */
+function safe_return_path(string $path, string $fallback): string
+{
+    return preg_match('#^/[A-Za-z0-9_\-][A-Za-z0-9_\-./]*\.php$#', $path) === 1 && !str_contains($path, '..')
+        ? $path
+        : $fallback;
 }
 
 function normalize_code(string $code): string

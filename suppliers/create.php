@@ -7,7 +7,7 @@ $pageTitle = 'Tambah Supplier';
 
 $errors = [];
 $form = ['name' => '', 'contact_person' => '', 'phone' => '', 'note' => ''];
-$returnTo = trim((string) ($_GET['return_to'] ?? ''));
+$returnTo = safe_return_path(trim((string) ($_GET['return_to'] ?? '')), '');
 
 if (is_post()) {
     verify_csrf();
@@ -15,7 +15,7 @@ if (is_post()) {
     $form['contact_person'] = post('contact_person');
     $form['phone'] = post('phone');
     $form['note'] = post('note');
-    $returnTo = post('return_to');
+    $returnTo = safe_return_path(post('return_to'), '');
 
     if ($form['name'] === '') {
         $errors[] = 'Nama supplier wajib diisi.';

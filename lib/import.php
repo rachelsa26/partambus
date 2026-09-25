@@ -207,8 +207,8 @@ function validate_import_row(array $mapped): array
     if ($mapped['cost'] !== '' && (!is_numeric($mapped['cost']) || (float) $mapped['cost'] < 0)) {
         $errors[] = 'Harga Pokok bukan angka yang valid';
     }
-    if ($mapped['price'] !== '' && (!is_numeric($mapped['price']) || (float) $mapped['price'] < 0)) {
-        $errors[] = 'Harga Jual bukan angka yang valid';
+    if ($mapped['price'] !== '' && (!is_numeric($mapped['price']) || (float) $mapped['price'] <= 0)) {
+        $errors[] = 'Harga Jual harus angka lebih dari 0 (kosongkan jika satuan ini belum dijual)';
     }
 
     return $errors;

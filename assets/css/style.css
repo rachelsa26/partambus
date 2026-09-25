@@ -780,7 +780,8 @@ kbd {
   cursor: pointer; position: relative;
 }
 .pos-result-row:last-child { border-bottom: none; }
-.pos-result-row:hover { background: var(--color-blue-soft-light); }
+.pos-result-row:hover, .pos-result-row:focus-visible { background: var(--color-blue-soft-light); }
+.pos-result-row:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 .pos-result-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 /* min-width:0 — a flex item's default min-width is auto (its content's
    intrinsic minimum), the same pitfall that caused the original grid
